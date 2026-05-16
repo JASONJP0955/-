@@ -5,9 +5,7 @@ import {
   CheckCircle2,
   Loader2,
   Mic,
-  Play,
   RotateCcw,
-  Send,
   Square,
   User,
   Volume2
@@ -116,7 +114,8 @@ export default function Home() {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+      const mimeType = ["audio/webm;codecs=opus", "audio/webm"].find((type) => MediaRecorder.isTypeSupported(type));
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
       streamRef.current = stream;
       recorderRef.current = recorder;
       chunksRef.current = [];
@@ -130,6 +129,7 @@ export default function Home() {
         setRecordedBlob(blob);
         stream.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
+        void submitAudio(blob);
       };
 
       recorder.start();
@@ -140,19 +140,19 @@ export default function Home() {
   }
 
   function stopRecording() {
+    setIsBusy(true);
     recorderRef.current?.stop();
     recorderRef.current = null;
     setIsRecording(false);
   }
 
-  async function submitRecording() {
-    if (!recordedBlob) return;
+  async function submitAudio(audioBlob: Blob) {
     setIsBusy(true);
     setError(null);
 
     try {
       const form = new FormData();
-      form.set("audio", new File([recordedBlob], "answer.webm", { type: recordedBlob.type || "audio/webm" }));
+      form.set("audio", new File([audioBlob], "answer.webm", { type: audioBlob.type || "audio/webm" }));
       form.set("topic", topic);
       form.set("difficulty", difficulty);
       form.set(
@@ -285,7 +285,12 @@ export default function Home() {
             </div>
 
             <div className="recorder-actions">
-              {!isRecording ? (
+              {isBusy && !isRecording ? (
+                <button type="button" className="record-button busy" disabled>
+                  <Loader2 className="spin" size={20} />
+                  分析中
+                </button>
+              ) : !isRecording ? (
                 <button type="button" className="record-button" onClick={startRecording} disabled={!sessionId || isBusy}>
                   <Mic size={20} />
                   录音
@@ -293,22 +298,9 @@ export default function Home() {
               ) : (
                 <button type="button" className="stop-button" onClick={stopRecording}>
                   <Square size={18} />
-                  停止
+                  停止并提交
                 </button>
               )}
-              <button type="button" className="secondary-action" onClick={submitRecording} disabled={!recordedBlob || isBusy}>
-                {isBusy ? <Loader2 className="spin" size={18} /> : <Send size={18} />}
-                提交
-              </button>
-              <button
-                type="button"
-                className="icon-button"
-                onClick={() => recordedBlob && new Audio(URL.createObjectURL(recordedBlob)).play()}
-                disabled={!recordedBlob}
-                title="试听录音"
-              >
-                <Play size={18} />
-              </button>
             </div>
 
             {error ? <p className="error">{error}</p> : null}

@@ -44,9 +44,13 @@ export async function createResponseJson<T>(payload: JsonObject): Promise<T> {
 export async function transcribeJapanese(audio: File): Promise<string> {
   const form = new FormData();
   form.set("file", audio);
-  form.set("model", process.env.OPENAI_STT_MODEL ?? "gpt-4o-mini-transcribe");
+  form.set("model", process.env.OPENAI_STT_MODEL ?? "gpt-4o-transcribe");
   form.set("language", "ja");
   form.set("response_format", "json");
+  form.set(
+    "prompt",
+    "Japanese learner speech. Transcribe only what the speaker says in Japanese. Preserve particles, verb endings, long vowels, and short pauses as accurately as possible."
+  );
 
   const response = await fetch(`${OPENAI_BASE_URL}/audio/transcriptions`, {
     method: "POST",

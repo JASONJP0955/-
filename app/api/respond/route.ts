@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { demoReply, evaluateAndContinue } from "@/lib/coach";
-import { hasOpenAIKey, synthesizeJapanese, transcribeJapanese } from "@/lib/openai";
+import { hasOpenAIKey, synthesizeJapanese } from "@/lib/openai";
+import { transcribeJapanese } from "@/lib/speech";
 import type { Difficulty } from "@/types/coach";
 
 export const runtime = "nodejs";

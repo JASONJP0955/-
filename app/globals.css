@@ -348,6 +348,11 @@ input {
   background: var(--coral);
   color: #ffffff;
   font-weight: 800;
+  min-width: 136px;
+}
+
+.record-button.busy {
+  background: var(--blue);
 }
 
 .stop-button {
