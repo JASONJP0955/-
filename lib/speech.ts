@@ -3,7 +3,7 @@ import { transcribeJapanese as transcribeWithOpenAI } from "@/lib/openai";
 type SpeechProvider = "openai" | "google";
 
 function speechProvider(): SpeechProvider {
-  return process.env.STT_PROVIDER === "google" ? "google" : "openai";
+  return process.env.STT_PROVIDER?.trim() === "google" ? "google" : "openai";
 }
 
 async function fileToBase64(file: File) {
@@ -11,8 +11,8 @@ async function fileToBase64(file: File) {
 }
 
 async function transcribeWithGoogle(audio: File): Promise<string> {
-  const accessToken = process.env.GOOGLE_SPEECH_ACCESS_TOKEN;
-  const apiKey = process.env.GOOGLE_SPEECH_API_KEY;
+  const accessToken = process.env.GOOGLE_SPEECH_ACCESS_TOKEN?.trim();
+  const apiKey = process.env.GOOGLE_SPEECH_API_KEY?.trim();
 
   if (!accessToken && !apiKey) {
     throw new Error("Google Speech-to-Text is selected, but no Google credential is configured.");
@@ -32,9 +32,9 @@ async function transcribeWithGoogle(audio: File): Promise<string> {
     body: JSON.stringify({
       config: {
         encoding: "WEBM_OPUS",
-        sampleRateHertz: Number(process.env.GOOGLE_SPEECH_SAMPLE_RATE ?? 48000),
+        sampleRateHertz: Number(process.env.GOOGLE_SPEECH_SAMPLE_RATE?.trim() ?? 48000),
         languageCode: "ja-JP",
-        model: process.env.GOOGLE_SPEECH_MODEL ?? "latest_short",
+        model: process.env.GOOGLE_SPEECH_MODEL?.trim() || "latest_short",
         enableAutomaticPunctuation: true,
         useEnhanced: true
       },

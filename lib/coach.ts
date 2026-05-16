@@ -167,7 +167,7 @@ export async function evaluateAndContinue(params: {
   };
 
   return createResponseJson<CoachReply>({
-    model: process.env.OPENAI_CHAT_MODEL ?? "gpt-5-mini",
+    model: process.env.OPENAI_CHAT_MODEL?.trim() || "gpt-5-mini",
     reasoning: { effort: "low" },
     text: {
       verbosity: "medium",

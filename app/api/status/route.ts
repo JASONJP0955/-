@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 export const runtime = "nodejs";
 
 export async function GET() {
-  const sttProvider = process.env.STT_PROVIDER === "google" ? "google" : "openai";
+  const sttProvider = process.env.STT_PROVIDER?.trim() === "google" ? "google" : "openai";
   const openaiConfigured = hasOpenAIKey();
   const googleConfigured = Boolean(process.env.GOOGLE_SPEECH_ACCESS_TOKEN || process.env.GOOGLE_SPEECH_API_KEY);
   const speechConfigured = sttProvider === "google" ? googleConfigured : openaiConfigured;
@@ -28,7 +28,7 @@ export async function GET() {
     sttProvider,
     sttModel:
       sttProvider === "google"
-        ? process.env.GOOGLE_SPEECH_MODEL ?? "latest_short"
-        : process.env.OPENAI_STT_MODEL ?? "gpt-4o-transcribe"
+        ? process.env.GOOGLE_SPEECH_MODEL?.trim() || "latest_short"
+        : process.env.OPENAI_STT_MODEL?.trim() || "gpt-4o-transcribe"
   });
 }
