@@ -3,7 +3,8 @@ const OPENAI_BASE_URL = "https://api.openai.com/v1";
 type JsonObject = Record<string, unknown>;
 
 export function hasOpenAIKey() {
-  return Boolean(process.env.OPENAI_API_KEY);
+  const key = process.env.OPENAI_API_KEY?.trim();
+  return Boolean(key && key.startsWith("sk-") && key !== "sk-your-key-here");
 }
 
 function authHeaders(extra?: HeadersInit): HeadersInit {

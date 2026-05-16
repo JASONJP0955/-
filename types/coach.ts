@@ -45,3 +45,12 @@ export type SessionStart = {
   audioBase64?: string;
   demoMode: boolean;
 };
+
+export type ApiStatus = {
+  demoMode: boolean;
+  openaiConfigured: boolean;
+  googleConfigured: boolean;
+  speechConfigured: boolean;
+  sttProvider: "openai" | "google";
+  sttModel: string;
+};

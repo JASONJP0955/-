@@ -40,6 +40,8 @@ cp .env.example .env.local
 OPENAI_API_KEY=sk-your-key-here
 ```
 
+没有 `.env.local` 或没有真实 key 时，页面会显示 Demo 模式。Demo 模式不会真实识别录音，只会返回固定示例文本。
+
 3. 启动
 
 ```bash

@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ChatMessage, CoachReply, Difficulty, SessionStart } from "@/types/coach";
+import type { ApiStatus, ChatMessage, CoachReply, Difficulty, SessionStart } from "@/types/coach";
 
 type CoachResponse = CoachReply & {
   audioBase64?: string;
@@ -58,6 +58,7 @@ export default function Home() {
   const [isRecording, setIsRecording] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
   const [demoMode, setDemoMode] = useState(false);
+  const [apiStatus, setApiStatus] = useState<ApiStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -69,6 +70,16 @@ export default function Home() {
   );
 
   useEffect(() => {
+    void fetch("/api/status")
+      .then((response) => response.json())
+      .then((data: ApiStatus) => {
+        setApiStatus(data);
+        setDemoMode(data.demoMode);
+      })
+      .catch(() => {
+        setApiStatus(null);
+      });
+
     return () => {
       streamRef.current?.getTracks().forEach((track) => track.stop());
       window.speechSynthesis?.cancel();
@@ -246,8 +257,15 @@ export default function Home() {
 
           <div className="status-strip">
             <CheckCircle2 size={17} />
-            <span>{demoMode ? "Demo 模式" : "API 模式"}</span>
+            <span>{demoMode ? "Demo 模式：未连接真实语音识别" : `API 模式：${apiStatus?.sttProvider ?? "openai"}`}</span>
           </div>
+
+          {demoMode ? (
+            <div className="demo-warning">
+              <strong>当前不会真实识别录音</strong>
+              <p>请先配置 OPENAI_API_KEY；如果选择 Google 转写，还需要配置 Google Speech 凭据，然后重启本地服务器。</p>
+            </div>
+          ) : null}
         </aside>
 
         <section className="chat-panel">

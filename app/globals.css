@@ -202,6 +202,25 @@ input {
   padding-top: 16px;
 }
 
+.demo-warning {
+  background: #fff7e8;
+  border: 1px solid #f0c36d;
+  border-radius: 8px;
+  color: #75500b;
+  display: grid;
+  gap: 6px;
+  padding: 11px 12px;
+}
+
+.demo-warning strong {
+  font-size: 14px;
+}
+
+.demo-warning p {
+  font-size: 13px;
+  line-height: 1.55;
+}
+
 .chat-panel {
   display: grid;
   grid-template-rows: auto 1fr auto;
