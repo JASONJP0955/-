@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   Loader2,
   Mic,
+  Play,
   RotateCcw,
   Square,
   User,
@@ -53,7 +54,8 @@ export default function Home() {
   const [topic, setTopic] = useState("daily conversation");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [feedback, setFeedback] = useState<CoachReply | null>(null);
+  const [feedbackByMessageId, setFeedbackByMessageId] = useState<Record<string, CoachReply>>({});
+  const [selectedFeedbackId, setSelectedFeedbackId] = useState<string | null>(null);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isBusy, setIsBusy] = useState(false);
@@ -63,11 +65,16 @@ export default function Home() {
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
+  const audioUrlsRef = useRef<string[]>([]);
 
   const latestAssistant = useMemo(
     () => [...messages].reverse().find((message) => message.role === "assistant"),
     [messages]
   );
+  const selectedFeedback = selectedFeedbackId ? feedbackByMessageId[selectedFeedbackId] : null;
+  const selectedUserMessage = selectedFeedbackId
+    ? messages.find((message) => message.id === selectedFeedbackId && message.role === "user")
+    : null;
 
   useEffect(() => {
     void fetch("/api/status")
@@ -82,9 +89,31 @@ export default function Home() {
 
     return () => {
       streamRef.current?.getTracks().forEach((track) => track.stop());
+      audioUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
       window.speechSynthesis?.cancel();
     };
   }, []);
+
+  function createAudioUrl(blob: Blob) {
+    const url = URL.createObjectURL(blob);
+    audioUrlsRef.current.push(url);
+    return url;
+  }
+
+  function resetConversation() {
+    audioUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    audioUrlsRef.current = [];
+    setMessages([]);
+    setFeedbackByMessageId({});
+    setSelectedFeedbackId(null);
+    setRecordedBlob(null);
+  }
+
+  function playUserAudio(audioUrl?: string) {
+    if (!audioUrl) return;
+    const audio = new Audio(audioUrl);
+    void audio.play();
+  }
 
   async function startSession() {
     setIsBusy(true);
@@ -108,7 +137,10 @@ export default function Home() {
 
       setSessionId(data.sessionId);
       setMessages([message]);
-      setFeedback(null);
+      audioUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      audioUrlsRef.current = [];
+      setFeedbackByMessageId({});
+      setSelectedFeedbackId(null);
       setRecordedBlob(null);
       setDemoMode(data.demoMode);
       playBase64Audio(data.audioBase64, data.assistantText);
@@ -181,10 +213,13 @@ export default function Home() {
         throw new Error(detail?.error ?? "分析失败，请稍后再试。");
       }
       const data = (await response.json()) as CoachResponse;
+      const userMessageId = nowId();
+      const audioUrl = createAudioUrl(audioBlob);
       const userMessage: ChatMessage = {
-        id: nowId(),
+        id: userMessageId,
         role: "user",
         text: data.transcriptJa,
+        audioUrl,
         createdAt: new Date().toISOString()
       };
       const assistantMessage: ChatMessage = {
@@ -195,7 +230,11 @@ export default function Home() {
       };
 
       setMessages((current) => [...current, userMessage, assistantMessage]);
-      setFeedback(data);
+      setFeedbackByMessageId((current) => ({
+        ...current,
+        [userMessageId]: data
+      }));
+      setSelectedFeedbackId(userMessageId);
       setDemoMode(data.demoMode);
       setRecordedBlob(null);
       playBase64Audio(data.audioBase64, data.nextReplyJa);
@@ -277,7 +316,7 @@ export default function Home() {
               <p className="eyebrow">当前会话</p>
               <h2>{sessionId ? "正在练习" : "准备开始"}</h2>
             </div>
-            <button type="button" className="icon-button" onClick={() => setMessages([])} title="清空">
+            <button type="button" className="icon-button" onClick={resetConversation} title="清空">
               <RotateCcw size={18} />
             </button>
           </div>
@@ -290,9 +329,36 @@ export default function Home() {
               </div>
             ) : (
               messages.map((message) => (
-                <article key={message.id} className={`message ${message.role}`}>
+                <article
+                  key={message.id}
+                  className={`message ${message.role} ${selectedFeedbackId === message.id ? "selected" : ""}`}
+                >
                   <div className="message-icon">{message.role === "assistant" ? <Bot size={18} /> : <User size={18} />}</div>
-                  <p>{message.text}</p>
+                  {message.role === "user" ? (
+                    <div className="message-content">
+                      <button
+                        type="button"
+                        className="message-text-button"
+                        onClick={() => setSelectedFeedbackId(message.id)}
+                        title="查看这一轮反馈"
+                      >
+                        {message.text}
+                      </button>
+                      {message.audioUrl ? (
+                        <button
+                          type="button"
+                          className="audio-chip"
+                          onClick={() => playUserAudio(message.audioUrl)}
+                          title="播放这一轮录音"
+                        >
+                          <Play size={14} />
+                          录音
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <p>{message.text}</p>
+                  )}
                 </article>
               ))
             )}
@@ -334,22 +400,34 @@ export default function Home() {
             <h2>反馈</h2>
           </div>
 
-          {feedback ? (
+          {selectedFeedback ? (
             <div className="feedback-stack">
               <section>
-                <h3>你的回答</h3>
-                <p className="quote-ja">{feedback.transcriptJa}</p>
+                <div className="answer-toolbar">
+                  <h3>你的回答</h3>
+                  {selectedUserMessage?.audioUrl ? (
+                    <button
+                      type="button"
+                      className="mini-action"
+                      onClick={() => playUserAudio(selectedUserMessage.audioUrl)}
+                    >
+                      <Volume2 size={15} />
+                      播放录音
+                    </button>
+                  ) : null}
+                </div>
+                <p className="quote-ja">{selectedFeedback.transcriptJa}</p>
               </section>
 
               <section>
                 <h3>更自然的说法</h3>
-                <p className="quote-ja">{feedback.naturalExpressionJa}</p>
+                <p className="quote-ja">{selectedFeedback.naturalExpressionJa}</p>
               </section>
 
               <section>
                 <h3>语法</h3>
-                {feedback.grammarFeedback.length ? (
-                  feedback.grammarFeedback.map((item) => (
+                {selectedFeedback.grammarFeedback.length ? (
+                  selectedFeedback.grammarFeedback.map((item) => (
                     <div className="feedback-item" key={`${item.title}-${item.correctionJa}`}>
                       <strong>{item.title}</strong>
                       <p>{item.explanationZh}</p>
@@ -363,8 +441,8 @@ export default function Home() {
 
               <section>
                 <h3>发音</h3>
-                {feedback.pronunciationFeedback.length ? (
-                  feedback.pronunciationFeedback.map((item) => (
+                {selectedFeedback.pronunciationFeedback.length ? (
+                  selectedFeedback.pronunciationFeedback.map((item) => (
                     <div className="feedback-item" key={`${item.target}-${item.practiceJa}`}>
                       <strong>{item.target}</strong>
                       <p>{item.issueZh}</p>
@@ -379,9 +457,9 @@ export default function Home() {
               <section>
                 <h3>分数</h3>
                 <div className="score-grid">
-                  <span>语法 {feedback.scores.grammar}</span>
-                  <span>发音 {feedback.scores.pronunciation}</span>
-                  <span>流畅 {feedback.scores.fluency}</span>
+                  <span>语法 {selectedFeedback.scores.grammar}</span>
+                  <span>发音 {selectedFeedback.scores.pronunciation}</span>
+                  <span>流畅 {selectedFeedback.scores.fluency}</span>
                 </div>
               </section>
             </div>

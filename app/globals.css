@@ -267,6 +267,12 @@ input {
   align-self: flex-end;
 }
 
+.message-content {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+
 .message-icon {
   align-items: center;
   background: #e7f3f1;
@@ -283,18 +289,44 @@ input {
   color: var(--coral);
 }
 
-.message p {
+.message p,
+.message-text-button {
   background: #f7faf9;
   border: 1px solid var(--line);
   border-radius: 8px;
+  color: var(--ink);
   line-height: 1.65;
   overflow-wrap: anywhere;
   padding: 12px 14px;
+  text-align: left;
 }
 
-.message.user p {
+.message-text-button {
+  width: 100%;
+}
+
+.message.user p,
+.message.user .message-text-button {
   background: #fff7f4;
   border-color: #f2c8bd;
+}
+
+.message.user.selected .message-text-button {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(31, 138, 131, 0.14);
+}
+
+.audio-chip {
+  align-items: center;
+  background: #f2f6f5;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  display: inline-flex;
+  gap: 5px;
+  justify-self: end;
+  min-height: 28px;
+  padding: 0 10px;
 }
 
 .empty-state {
@@ -402,6 +434,25 @@ input {
 .feedback-stack section {
   display: grid;
   gap: 10px;
+}
+
+.answer-toolbar {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.mini-action {
+  align-items: center;
+  background: #f2f6f5;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  display: inline-flex;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 10px;
 }
 
 .quote-ja {
