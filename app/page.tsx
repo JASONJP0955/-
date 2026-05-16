@@ -67,6 +67,7 @@ export default function Home() {
   const chunksRef = useRef<BlobPart[]>([]);
   const audioUrlsRef = useRef<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const playbackContextRef = useRef<AudioContext | null>(null);
 
   const latestAssistant = useMemo(
     () => [...messages].reverse().find((message) => message.role === "assistant"),
@@ -91,6 +92,7 @@ export default function Home() {
     return () => {
       streamRef.current?.getTracks().forEach((track) => track.stop());
       audioUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      playbackContextRef.current?.close();
       window.speechSynthesis?.cancel();
     };
   }, []);
@@ -114,10 +116,26 @@ export default function Home() {
     setRecordedBlob(null);
   }
 
-  function playUserAudio(audioUrl?: string) {
+  async function playUserAudio(audioUrl?: string) {
     if (!audioUrl) return;
-    const audio = new Audio(audioUrl);
-    void audio.play();
+
+    try {
+      const audio = new Audio(audioUrl);
+      audio.crossOrigin = "anonymous";
+      const context = playbackContextRef.current ?? new AudioContext();
+      playbackContextRef.current = context;
+      const source = context.createMediaElementSource(audio);
+      const gain = context.createGain();
+      gain.gain.value = 2.5;
+      source.connect(gain);
+      gain.connect(context.destination);
+      await context.resume();
+      await audio.play();
+    } catch {
+      const audio = new Audio(audioUrl);
+      audio.volume = 1;
+      void audio.play();
+    }
   }
 
   async function startSession() {
