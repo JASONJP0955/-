@@ -7,6 +7,7 @@ type FeedbackRow = {
   utterance_id: string;
   transcript_ja: string;
   natural_expression_ja: string;
+  error_feedback: { categoryZh: string; originalJa: string; issueZh: string; suggestionZh: string; correctionJa: string }[];
   grammar_feedback: { title: string; explanationZh: string; correctionJa: string }[];
   pronunciation_feedback: { target: string; issueZh: string; practiceJa: string }[];
   grammar_score: number;
@@ -45,7 +46,7 @@ export default async function SessionHistoryPage({ params }: { params: Promise<{
     ? await supabase!
         .from("feedback")
         .select(
-          "utterance_id, transcript_ja, natural_expression_ja, grammar_feedback, pronunciation_feedback, grammar_score, pronunciation_score, fluency_score"
+          "utterance_id, transcript_ja, natural_expression_ja, error_feedback, grammar_feedback, pronunciation_feedback, grammar_score, pronunciation_score, fluency_score"
         )
         .in("utterance_id", userUtteranceIds)
     : { data: [] };
@@ -71,9 +72,6 @@ export default async function SessionHistoryPage({ params }: { params: Promise<{
               {session.difficulty} · {new Date(session.started_at).toLocaleString("zh-CN")}
             </p>
           </div>
-          <Link className="ghost-action" href="/history">
-            返回记录
-          </Link>
         </div>
 
         <div className="history-session">
@@ -82,30 +80,55 @@ export default async function SessionHistoryPage({ params }: { params: Promise<{
             return (
               <article className={`history-turn ${utterance.speaker}`} key={utterance.id}>
                 <div className="history-turn-header">
-                  <strong>{utterance.speaker === "user" ? "你" : "机器人"}</strong>
+                  <strong className="history-role-badge">{utterance.speaker === "user" ? "你的回复" : "机器人回复"}</strong>
                   {audioUrls.get(utterance.id) ? (
                     <audio controls src={audioUrls.get(utterance.id)} preload="none">
                       <track kind="captions" />
                     </audio>
                   ) : null}
                 </div>
-                <p className="quote-ja">{utterance.text}</p>
+                <p className="quote-ja history-quote">{utterance.text}</p>
 
                 {feedback ? (
-                  <div className="feedback-stack compact-stack">
-                    <section>
+                  <div className="feedback-stack compact-stack history-feedback">
+                    <section className="history-feedback-section score-section">
                       <h3>分数</h3>
-                      <div className="score-grid">
-                        <span>语法 {feedback.grammar_score}</span>
-                        <span>发音 {feedback.pronunciation_score}</span>
-                        <span>流畅 {feedback.fluency_score}</span>
+                      <div className="score-grid history-score-grid">
+                        <span>
+                          <small>语法</small>
+                          <strong>{feedback.grammar_score}</strong>
+                        </span>
+                        <span>
+                          <small>发音</small>
+                          <strong>{feedback.pronunciation_score}</strong>
+                        </span>
+                        <span>
+                          <small>流畅</small>
+                          <strong>{feedback.fluency_score}</strong>
+                        </span>
                       </div>
                     </section>
-                    <section>
+                    <section className="history-feedback-section natural-section">
                       <h3>更自然的说法</h3>
-                      <p className="quote-ja">{feedback.natural_expression_ja}</p>
+                      <p className="quote-ja history-quote">{feedback.natural_expression_ja}</p>
                     </section>
-                    <section>
+                    <section className="history-feedback-section error-section">
+                      <h3>错误与改进建议</h3>
+                      {feedback.error_feedback?.length ? (
+                        feedback.error_feedback.map((item) => (
+                          <div className="feedback-item" key={`${item.categoryZh}-${item.originalJa}-${item.correctionJa}`}>
+                            <strong>{item.categoryZh}</strong>
+                            <code>{item.originalJa}</code>
+                            <p>{item.issueZh}</p>
+                            <p>{item.suggestionZh}</p>
+                            <code>{item.correctionJa}</code>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="muted">没有明显词汇或语法错误。</p>
+                      )}
+                    </section>
+                    <section className="history-feedback-section grammar-section">
                       <h3>语法</h3>
                       {feedback.grammar_feedback?.map((item) => (
                         <div className="feedback-item" key={`${item.title}-${item.correctionJa}`}>
@@ -115,7 +138,7 @@ export default async function SessionHistoryPage({ params }: { params: Promise<{
                         </div>
                       ))}
                     </section>
-                    <section>
+                    <section className="history-feedback-section pronunciation-section">
                       <h3>发音</h3>
                       {feedback.pronunciation_feedback?.map((item) => (
                         <div className="feedback-item" key={`${item.target}-${item.practiceJa}`}>
@@ -132,6 +155,9 @@ export default async function SessionHistoryPage({ params }: { params: Promise<{
           })}
         </div>
       </section>
+      <Link className="history-back-floating" href="/history">
+        返回记录
+      </Link>
     </main>
   );
 }

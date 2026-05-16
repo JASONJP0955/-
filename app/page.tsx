@@ -515,6 +515,23 @@ export default function Home() {
                 <p className="quote-ja">{selectedFeedback.naturalExpressionJa}</p>
               </section>
 
+              <section className="error-section">
+                <h3>错误与改进建议</h3>
+                {(selectedFeedback.errorFeedback ?? []).length ? (
+                  selectedFeedback.errorFeedback.map((item) => (
+                    <div className="feedback-item" key={`${item.categoryZh}-${item.originalJa}-${item.correctionJa}`}>
+                      <strong>{item.categoryZh}</strong>
+                      <code>{item.originalJa}</code>
+                      <p>{item.issueZh}</p>
+                      <p>{item.suggestionZh}</p>
+                      <code>{item.correctionJa}</code>
+                    </div>
+                  ))
+                ) : (
+                  <p className="muted">没有明显词汇或语法错误。</p>
+                )}
+              </section>
+
               <section>
                 <h3>语法</h3>
                 {selectedFeedback.grammarFeedback.length ? (

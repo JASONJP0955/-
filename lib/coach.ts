@@ -39,6 +39,15 @@ export function createSessionStarter(difficulty: Difficulty) {
 export function demoReply(transcriptJa = "今日は学校に行きました。"): CoachReply {
   return {
     transcriptJa,
+    errorFeedback: [
+      {
+        categoryZh: "表达完整度",
+        originalJa: "今日は学校に行きました。",
+        issueZh: "这句话本身没有明显错误，但信息比较少，听起来像只回答了一半。",
+        suggestionZh: "可以补充和谁一起、做了什么、感觉怎么样，让回答更自然。",
+        correctionJa: "今日は学校に行って、友達と少し勉強しました。"
+      }
+    ],
     grammarFeedback: [
       {
         title: "自然さ",
@@ -82,6 +91,7 @@ export async function evaluateAndContinue(params: {
     additionalProperties: false,
     required: [
       "transcriptJa",
+      "errorFeedback",
       "grammarFeedback",
       "pronunciationFeedback",
       "naturalExpressionJa",
@@ -92,6 +102,23 @@ export async function evaluateAndContinue(params: {
     ],
     properties: {
       transcriptJa: { type: "string" },
+      errorFeedback: {
+        type: "array",
+        minItems: 0,
+        maxItems: 4,
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["categoryZh", "originalJa", "issueZh", "suggestionZh", "correctionJa"],
+          properties: {
+            categoryZh: { type: "string" },
+            originalJa: { type: "string" },
+            issueZh: { type: "string" },
+            suggestionZh: { type: "string" },
+            correctionJa: { type: "string" }
+          }
+        }
+      },
       grammarFeedback: {
         type: "array",
         minItems: 0,
@@ -155,7 +182,7 @@ export async function evaluateAndContinue(params: {
       {
         role: "developer",
         content:
-          "You are a Japanese speaking coach for Chinese native speakers. Continue the conversation in Japanese. Feedback must be concise Chinese text. The spoken assistant reply must never read correction advice aloud. Pronunciation feedback is based on transcript-level evidence, so phrase it as likely or practice-focused unless the issue is certain. Make nextReplyJa warmer and longer than a normal chatbot turn: 3 to 5 natural Japanese sentences, roughly 120 to 220 Japanese characters. Include a short reaction to the learner's answer, one topic-expanding detail or example, and one specific follow-up question. Do not reply with only a short standalone question."
+          "You are a Japanese speaking coach for Chinese native speakers. Continue the conversation in Japanese. Feedback must be concise Chinese text. The spoken assistant reply must never read correction advice aloud. In errorFeedback, list concrete problems in the learner's exact utterance, including vocabulary, grammar, particles, tense, word choice, and unnatural expressions. For each item, cite the original Japanese fragment, explain the issue in Chinese, give an actionable Chinese suggestion, and provide one corrected Japanese version. If there is no clear error, include only one improvement item about richness or naturalness. Pronunciation feedback is based on transcript-level evidence, so phrase it as likely or practice-focused unless the issue is certain. Make nextReplyJa warmer and longer than a normal chatbot turn: 3 to 5 natural Japanese sentences, roughly 120 to 220 Japanese characters. Include a short reaction to the learner's answer, one topic-expanding detail or example, and one specific follow-up question. Do not reply with only a short standalone question."
       },
       {
         role: "user",

@@ -35,6 +35,7 @@ create table if not exists public.feedback (
   user_id uuid not null references auth.users(id) on delete cascade,
   transcript_ja text not null,
   natural_expression_ja text not null,
+  error_feedback jsonb not null default '[]'::jsonb,
   grammar_feedback jsonb not null default '[]'::jsonb,
   pronunciation_feedback jsonb not null default '[]'::jsonb,
   grammar_score integer not null check (grammar_score between 0 and 100),
@@ -44,6 +45,9 @@ create table if not exists public.feedback (
   next_topic_suggestion_zh text,
   created_at timestamptz not null default now()
 );
+
+alter table public.feedback
+  add column if not exists error_feedback jsonb not null default '[]'::jsonb;
 
 create index if not exists conversation_sessions_user_started_idx
   on public.conversation_sessions(user_id, started_at desc);

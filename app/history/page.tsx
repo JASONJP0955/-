@@ -11,10 +11,10 @@ export default async function HistoryPage() {
           <p className="eyebrow">History</p>
           <h1>还没有配置 Supabase</h1>
           <p className="muted">请先在 `.env.local` 里配置 Supabase URL 和 anon key，然后运行 `supabase/schema.sql`。</p>
-          <Link className="text-link" href="/">
-            回到练习页
-          </Link>
         </section>
+        <Link className="history-back-floating" href="/">
+          回到练习
+        </Link>
       </main>
     );
   }
@@ -39,9 +39,6 @@ export default async function HistoryPage() {
             <p className="eyebrow">History</p>
             <h1>练习记录</h1>
           </div>
-          <Link className="ghost-action" href="/">
-            回到练习
-          </Link>
         </div>
 
         {sessions?.length ? (
@@ -61,6 +58,9 @@ export default async function HistoryPage() {
           </div>
         )}
       </section>
+      <Link className="history-back-floating" href="/">
+        回到练习
+      </Link>
     </main>
   );
 }

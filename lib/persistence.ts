@@ -108,6 +108,7 @@ export async function saveConversationTurn(params: {
       user_id: user.id,
       transcript_ja: params.coach.transcriptJa,
       natural_expression_ja: params.coach.naturalExpressionJa,
+      error_feedback: params.coach.errorFeedback,
       grammar_feedback: params.coach.grammarFeedback,
       pronunciation_feedback: params.coach.pronunciationFeedback,
       grammar_score: params.coach.scores.grammar,

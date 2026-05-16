@@ -520,6 +520,22 @@ input {
   line-height: 1.6;
 }
 
+.feedback-stack > .error-section {
+  background: #fff6f2;
+  border: 1px solid #efb8aa;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.error-section .feedback-item {
+  background: #ffffff;
+  border-left: 5px solid var(--coral);
+}
+
+.error-section code {
+  background: #fff0ea;
+}
+
 code {
   background: #f3f7f6;
   border-radius: 6px;
@@ -623,6 +639,7 @@ code {
 .history-shell {
   background: #eef3f1;
   overflow: auto;
+  padding-bottom: 86px;
 }
 
 .history-panel {
@@ -631,6 +648,50 @@ code {
   margin: 0 auto;
   max-width: 1040px;
   padding: 24px;
+}
+
+.history-back-floating {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #b8d2cb;
+  border-radius: 999px;
+  bottom: 18px;
+  box-shadow: 0 12px 30px rgba(27, 52, 59, 0.18);
+  color: var(--teal-dark);
+  display: inline-flex;
+  font-size: 15px;
+  font-weight: 800;
+  gap: 8px;
+  justify-content: center;
+  left: 50%;
+  min-height: 38px;
+  min-width: 118px;
+  padding: 0 16px;
+  position: fixed;
+  text-decoration: none;
+  transform: translateX(-50%);
+  transition:
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+  z-index: 20;
+}
+
+.history-back-floating::before {
+  align-items: center;
+  background: #e8f3f0;
+  border-radius: 999px;
+  content: "←";
+  display: inline-flex;
+  height: 22px;
+  justify-content: center;
+  width: 22px;
+}
+
+.history-back-floating:hover {
+  background: #f5fbf9;
+  box-shadow: 0 14px 34px rgba(27, 52, 59, 0.22);
+  transform: translate(-50%, -2px);
 }
 
 .history-header,
@@ -658,6 +719,12 @@ code {
   text-decoration: none;
 }
 
+.history-turn {
+  border-width: 2px;
+  gap: 12px;
+  padding: 16px;
+}
+
 .history-item:hover {
   border-color: var(--teal);
 }
@@ -668,8 +735,46 @@ code {
   font-size: 13px;
 }
 
+.history-turn.assistant {
+  background: #f7fbff;
+  border-color: #b8cde2;
+  box-shadow: inset 5px 0 0 var(--blue);
+}
+
 .history-turn.user {
-  border-color: #f2c8bd;
+  background: #fff8f5;
+  border-color: #efb8aa;
+  box-shadow: inset 5px 0 0 var(--coral);
+}
+
+.history-role-badge {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 14px;
+  padding: 7px 12px;
+}
+
+.history-turn.assistant .history-role-badge {
+  background: #e8f2fb;
+  border-color: #b8cde2;
+  color: #2f587f;
+}
+
+.history-turn.user .history-role-badge {
+  background: #fff0ea;
+  border-color: #efb8aa;
+  color: #a94331;
+}
+
+.history-turn.assistant .history-quote {
+  background: #eef6fc;
+  border-left-color: var(--blue);
+}
+
+.history-turn.user .history-quote {
+  background: #fff2ed;
+  border-left-color: var(--coral);
 }
 
 .history-turn audio {
@@ -681,6 +786,97 @@ code {
   border-top: 1px solid var(--line);
   margin-top: 8px;
   padding: 14px 0 0;
+}
+
+.history-feedback {
+  background: #fbfcfb;
+  border: 2px solid #c9d8d4;
+  border-radius: 8px;
+  margin-top: 10px;
+  padding: 14px;
+}
+
+.compact-stack.history-feedback {
+  border-top: 2px solid #c9d8d4;
+  padding: 14px;
+}
+
+.history-feedback-section {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.history-feedback-section h3 {
+  font-size: 16px;
+}
+
+.score-section {
+  background: #fffaf0;
+  border-color: #e7c774;
+}
+
+.natural-section {
+  background: #eef8f4;
+  border-color: #9ed3c5;
+}
+
+.natural-section .history-quote {
+  background: #f6fcfa;
+  border-left-color: var(--teal);
+}
+
+.grammar-section {
+  background: #faf8ff;
+  border-color: #c9c1e8;
+}
+
+.history-feedback-section.error-section {
+  background: #fff6f2;
+  border-color: #efb8aa;
+}
+
+.pronunciation-section {
+  background: #f4f9fd;
+  border-color: #b7d0e8;
+}
+
+.history-score-grid span {
+  align-items: center;
+  background: #fff3cc;
+  border: 1px solid #dfbb59;
+  display: grid;
+  gap: 3px;
+  padding: 12px;
+}
+
+.history-score-grid small {
+  color: #725013;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.history-score-grid strong {
+  color: var(--ink);
+  font-size: 22px;
+}
+
+.grammar-section .feedback-item {
+  background: #ffffff;
+  border-left: 5px solid #7560b8;
+}
+
+.grammar-section code {
+  background: #f4f1ff;
+}
+
+.pronunciation-section .feedback-item {
+  background: #ffffff;
+  border-left: 5px solid var(--blue);
+}
+
+.pronunciation-section code {
+  background: #edf6fc;
 }
 
 .spin {

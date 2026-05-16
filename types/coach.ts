@@ -20,6 +20,14 @@ export type PronunciationFeedback = {
   practiceJa: string;
 };
 
+export type ErrorFeedback = {
+  categoryZh: string;
+  originalJa: string;
+  issueZh: string;
+  suggestionZh: string;
+  correctionJa: string;
+};
+
 export type CoachScores = {
   grammar: number;
   pronunciation: number;
@@ -28,6 +36,7 @@ export type CoachScores = {
 
 export type CoachReply = {
   transcriptJa: string;
+  errorFeedback: ErrorFeedback[];
   grammarFeedback: GrammarFeedback[];
   pronunciationFeedback: PronunciationFeedback[];
   naturalExpressionJa: string;
