@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { HistoryFloatingLink } from "@/components/history-floating-link";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
 
@@ -12,9 +13,9 @@ export default async function HistoryPage() {
           <h1>还没有配置 Supabase</h1>
           <p className="muted">请先在 `.env.local` 里配置 Supabase URL 和 anon key，然后运行 `supabase/schema.sql`。</p>
         </section>
-        <Link className="history-back-floating" href="/">
+        <HistoryFloatingLink href="/">
           回到练习
-        </Link>
+        </HistoryFloatingLink>
       </main>
     );
   }
@@ -29,7 +30,8 @@ export default async function HistoryPage() {
   const { data: sessions } = await supabase!
     .from("conversation_sessions")
     .select("id, topic, difficulty, started_at, assistant_starter")
-    .order("started_at", { ascending: false });
+    .order("started_at", { ascending: false })
+    .limit(50);
 
   return (
     <main className="history-shell">
@@ -44,7 +46,7 @@ export default async function HistoryPage() {
         {sessions?.length ? (
           <div className="history-list">
             {sessions.map((session) => (
-              <Link className="history-item" href={`/history/${session.id}`} key={session.id}>
+              <Link className="history-item" href={`/history/${session.id}`} key={session.id} prefetch>
                 <strong>{session.topic}</strong>
                 <span>{session.difficulty}</span>
                 <p>{session.assistant_starter}</p>
@@ -58,9 +60,9 @@ export default async function HistoryPage() {
           </div>
         )}
       </section>
-      <Link className="history-back-floating" href="/">
+      <HistoryFloatingLink href="/">
         回到练习
-      </Link>
+      </HistoryFloatingLink>
     </main>
   );
 }

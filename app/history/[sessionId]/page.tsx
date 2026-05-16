@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { HistoryFloatingLink } from "@/components/history-floating-link";
 import { createClient } from "@/lib/supabase/server";
 import { hasSupabaseConfig } from "@/lib/supabase/config";
 
@@ -27,19 +28,20 @@ export default async function SessionHistoryPage({ params }: { params: Promise<{
 
   if (!user) redirect(`/login?next=/history/${sessionId}`);
 
-  const { data: session } = await supabase!
-    .from("conversation_sessions")
-    .select("id, topic, difficulty, started_at, assistant_starter")
-    .eq("id", sessionId)
-    .single();
+  const [{ data: session }, { data: utterances }] = await Promise.all([
+    supabase!
+      .from("conversation_sessions")
+      .select("id, topic, difficulty, started_at, assistant_starter")
+      .eq("id", sessionId)
+      .single(),
+    supabase!
+      .from("utterances")
+      .select("id, speaker, text, audio_path, created_at")
+      .eq("session_id", sessionId)
+      .order("created_at", { ascending: true })
+  ]);
 
   if (!session) notFound();
-
-  const { data: utterances } = await supabase!
-    .from("utterances")
-    .select("id, speaker, text, audio_path, created_at")
-    .eq("session_id", sessionId)
-    .order("created_at", { ascending: true });
 
   const userUtteranceIds = (utterances ?? []).filter((item) => item.speaker === "user").map((item) => item.id);
   const { data: feedbackRows } = userUtteranceIds.length
@@ -54,10 +56,14 @@ export default async function SessionHistoryPage({ params }: { params: Promise<{
   const feedbackByUtterance = new Map((feedbackRows as FeedbackRow[] | null)?.map((item) => [item.utterance_id, item]));
   const audioUrls = new Map<string, string>();
 
-  for (const utterance of utterances ?? []) {
-    if (utterance.audio_path) {
-      const { data } = await supabase!.storage.from("user-recordings").createSignedUrl(utterance.audio_path, 60 * 60);
-      if (data?.signedUrl) audioUrls.set(utterance.id, data.signedUrl);
+  const audioUtterances = (utterances ?? []).filter((utterance) => utterance.audio_path);
+  if (audioUtterances.length) {
+    const paths = audioUtterances.map((utterance) => utterance.audio_path as string);
+    const { data } = await supabase!.storage.from("user-recordings").createSignedUrls(paths, 60 * 60);
+    const signedUrlByPath = new Map((data ?? []).map((item) => [item.path, item.signedUrl]));
+    for (const utterance of audioUtterances) {
+      const signedUrl = signedUrlByPath.get(utterance.audio_path as string);
+      if (signedUrl) audioUrls.set(utterance.id, signedUrl);
     }
   }
 
@@ -155,9 +161,9 @@ export default async function SessionHistoryPage({ params }: { params: Promise<{
           })}
         </div>
       </section>
-      <Link className="history-back-floating" href="/history">
+      <HistoryFloatingLink href="/history">
         返回记录
-      </Link>
+      </HistoryFloatingLink>
     </main>
   );
 }

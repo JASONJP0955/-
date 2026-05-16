@@ -708,6 +708,23 @@ code {
   gap: 14px;
 }
 
+.history-skeleton-list {
+  display: grid;
+  gap: 14px;
+}
+
+.history-skeleton-card {
+  animation: skeleton-pulse 1.1s ease-in-out infinite;
+  background: linear-gradient(90deg, #eef3f1 0%, #f8fbfa 48%, #eef3f1 100%);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  min-height: 118px;
+}
+
+.history-skeleton-card.tall {
+  min-height: 220px;
+}
+
 .history-item,
 .history-turn {
   border: 1px solid var(--line);
@@ -886,6 +903,16 @@ code {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.65;
+  }
+  50% {
+    opacity: 1;
   }
 }
 
