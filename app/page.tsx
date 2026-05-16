@@ -442,39 +442,62 @@ export default function Home() {
                 <p>点击开始会话后，机器人会先用日语开口。</p>
               </div>
             ) : (
-              messages.map((message) => (
-                <article
-                  key={message.id}
-                  className={`message ${message.role} ${selectedFeedbackId === message.id ? "selected" : ""}`}
-                >
-                  <div className="message-icon">{message.role === "assistant" ? <Bot size={18} /> : <User size={18} />}</div>
-                  {message.role === "user" ? (
-                    <div className="message-content">
-                      <button
-                        type="button"
-                        className="message-text-button"
-                        onClick={() => setSelectedFeedbackId(message.id)}
-                        title="查看这一轮反馈"
-                      >
-                        {message.text}
-                      </button>
-                      {message.audioUrl ? (
+              messages.map((message) => {
+                const messageFeedback = feedbackByMessageId[message.id];
+                const messageFeedbackStatus = feedbackStatusByMessageId[message.id];
+
+                return (
+                  <article
+                    key={message.id}
+                    className={`message ${message.role} ${selectedFeedbackId === message.id ? "selected" : ""}`}
+                  >
+                    <div className="message-icon">
+                      {message.role === "assistant" ? <Bot size={18} /> : <User size={18} />}
+                    </div>
+                    {message.role === "user" ? (
+                      <div className="message-content">
                         <button
                           type="button"
-                          className="audio-chip"
-                          onClick={() => playUserAudio(message.audioUrl)}
-                          title="播放这一轮录音"
+                          className="message-text-button"
+                          onClick={() => setSelectedFeedbackId(message.id)}
+                          title="查看这一轮反馈"
                         >
-                          <Play size={14} />
-                          录音
+                          {message.text}
                         </button>
-                      ) : null}
-                    </div>
-                  ) : (
-                    <p>{message.text}</p>
-                  )}
-                </article>
-              ))
+                        {messageFeedback?.naturalExpressionJa ? (
+                          <div className="standard-answer">
+                            <strong>标准回答</strong>
+                            <p>{messageFeedback.naturalExpressionJa}</p>
+                          </div>
+                        ) : messageFeedbackStatus === "pending" ? (
+                          <div className="standard-answer pending">
+                            <strong>标准回答</strong>
+                            <p>生成中...</p>
+                          </div>
+                        ) : messageFeedbackStatus === "error" ? (
+                          <div className="standard-answer error">
+                            <strong>标准回答</strong>
+                            <p>暂时无法生成，请稍后再试。</p>
+                          </div>
+                        ) : null}
+                        {message.audioUrl ? (
+                          <button
+                            type="button"
+                            className="audio-chip"
+                            onClick={() => playUserAudio(message.audioUrl)}
+                            title="播放这一轮录音"
+                          >
+                            <Play size={14} />
+                            录音
+                          </button>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <p>{message.text}</p>
+                    )}
+                  </article>
+                );
+              })
             )}
             <div ref={messagesEndRef} />
           </div>

@@ -345,6 +345,43 @@ input {
   box-shadow: 0 0 0 3px rgba(31, 138, 131, 0.14);
 }
 
+.standard-answer {
+  background: #eef8f4;
+  border: 1px solid #9ed3c5;
+  border-left: 4px solid var(--teal);
+  border-radius: 8px;
+  display: grid;
+  gap: 5px;
+  line-height: 1.6;
+  padding: 10px 12px;
+}
+
+.standard-answer strong {
+  color: var(--teal-dark);
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.standard-answer p {
+  background: transparent;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.standard-answer.pending {
+  background: #f6faf9;
+  border-color: var(--line);
+  border-left-color: #9cc8c3;
+  color: var(--muted);
+}
+
+.standard-answer.error {
+  background: #fff0ed;
+  border-color: #f2b6aa;
+  border-left-color: var(--coral);
+}
+
 .audio-chip {
   align-items: center;
   background: #f2f6f5;
