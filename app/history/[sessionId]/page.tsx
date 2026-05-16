@@ -31,7 +31,7 @@ export default async function SessionHistoryPage({ params }: { params: Promise<{
   const [{ data: session }, { data: utterances }] = await Promise.all([
     supabase!
       .from("conversation_sessions")
-      .select("id, topic, difficulty, started_at, assistant_starter")
+      .select("id, topic, started_at, assistant_starter")
       .eq("id", sessionId)
       .single(),
     supabase!
@@ -75,7 +75,7 @@ export default async function SessionHistoryPage({ params }: { params: Promise<{
             <p className="eyebrow">Session</p>
             <h1>{session.topic}</h1>
             <p className="muted">
-              {session.difficulty} · {new Date(session.started_at).toLocaleString("zh-CN")}
+              {new Date(session.started_at).toLocaleString("zh-CN")}
             </p>
           </div>
         </div>

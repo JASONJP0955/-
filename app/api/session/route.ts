@@ -6,14 +6,10 @@ import type { Difficulty, SessionStart } from "@/types/coach";
 
 export const runtime = "nodejs";
 
-function isDifficulty(value: unknown): value is Difficulty {
-  return value === "beginner" || value === "intermediate" || value === "advanced";
-}
-
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => ({}));
-  const difficulty = isDifficulty(body.difficulty) ? body.difficulty : "intermediate";
-  const selectedTopic = createSessionStarter(difficulty);
+  await request.json().catch(() => ({}));
+  const difficulty: Difficulty = "intermediate";
+  const selectedTopic = createSessionStarter();
   const topic = selectedTopic.topic;
   const assistantText = selectedTopic.starter;
   const sessionId = crypto.randomUUID();

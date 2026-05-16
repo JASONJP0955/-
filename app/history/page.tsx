@@ -29,7 +29,7 @@ export default async function HistoryPage() {
 
   const { data: sessions } = await supabase!
     .from("conversation_sessions")
-    .select("id, topic, difficulty, started_at, assistant_starter")
+    .select("id, topic, started_at, assistant_starter")
     .order("started_at", { ascending: false })
     .limit(50);
 
@@ -48,7 +48,6 @@ export default async function HistoryPage() {
             {sessions.map((session) => (
               <Link className="history-item" href={`/history/${session.id}`} key={session.id} prefetch>
                 <strong>{session.topic}</strong>
-                <span>{session.difficulty}</span>
                 <p>{session.assistant_starter}</p>
                 <time>{new Date(session.started_at).toLocaleString("zh-CN")}</time>
               </Link>

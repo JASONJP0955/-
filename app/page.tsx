@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ApiStatus, ChatMessage, CoachQuickReply, CoachReply, Difficulty, SessionStart } from "@/types/coach";
+import type { ApiStatus, ChatMessage, CoachQuickReply, CoachReply, SessionStart } from "@/types/coach";
 
 type FastResponse = CoachQuickReply & {
   transcriptJa: string;
@@ -28,11 +28,7 @@ type FeedbackResponse = CoachReply & {
 
 type FeedbackStatus = "pending" | "error";
 
-const difficultyLabels: Record<Difficulty, string> = {
-  beginner: "初级",
-  intermediate: "中级",
-  advanced: "高级"
-};
+const difficulty = "intermediate";
 
 function nowId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -58,7 +54,6 @@ function playBase64Audio(audioBase64?: string, fallbackText?: string) {
 }
 
 export default function Home() {
-  const [difficulty, setDifficulty] = useState<Difficulty>("intermediate");
   const [topic, setTopic] = useState("随机选择");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -391,22 +386,6 @@ export default function Home() {
               readOnly
               placeholder="点击开始会话后随机选择"
             />
-          </div>
-
-          <div className="control-block">
-            <span>难度</span>
-            <div className="segments">
-              {(Object.keys(difficultyLabels) as Difficulty[]).map((value) => (
-                <button
-                  key={value}
-                  type="button"
-                  className={difficulty === value ? "active" : ""}
-                  onClick={() => setDifficulty(value)}
-                >
-                  {difficultyLabels[value]}
-                </button>
-              ))}
-            </div>
           </div>
 
           <button className="primary-action" type="button" onClick={startSession} disabled={isBusy}>
