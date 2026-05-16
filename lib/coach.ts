@@ -118,8 +118,10 @@ export async function continueConversation(params: {
   transcriptJa: string;
   topic: string;
   difficulty: Difficulty;
+  turnCount: number;
   history: { role: "assistant" | "user"; text: string }[];
 }) {
+  const shouldShiftTopic = params.turnCount >= 3 && params.turnCount % 3 === 0;
   const schema = {
     type: "object",
     additionalProperties: false,
@@ -147,7 +149,7 @@ export async function continueConversation(params: {
       {
         role: "developer",
         content:
-          "You are a warm Japanese conversation partner for Chinese native speakers. Reply only in Japanese. Do not give correction advice here. Continue the topic naturally with 2 to 4 sentences, roughly 80 to 160 Japanese characters. Include a short reaction and one follow-up question."
+          "You are a warm Japanese conversation partner for Chinese native speakers. Reply only in Japanese. Do not give correction advice here. Continue the topic naturally with 2 to 4 sentences, roughly 80 to 160 Japanese characters. Include a short reaction and one follow-up question. If shouldShiftTopic is true, briefly acknowledge the learner's answer, then clearly move to a fresh everyday conversation topic with a new question. Do not keep expanding the old topic when shouldShiftTopic is true."
       },
       {
         role: "user",
@@ -155,6 +157,8 @@ export async function continueConversation(params: {
           task: "Continue the Japanese conversation quickly.",
           topic: params.topic,
           difficulty: params.difficulty,
+          turnCount: params.turnCount,
+          shouldShiftTopic,
           history: params.history.slice(-8),
           transcriptJa: params.transcriptJa
         })

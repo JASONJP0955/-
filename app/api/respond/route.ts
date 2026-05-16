@@ -18,6 +18,7 @@ export async function POST(request: Request) {
     const sessionId = String(form.get("sessionId") || crypto.randomUUID());
     const difficultyValue = form.get("difficulty");
     const difficulty = isDifficulty(difficultyValue) ? difficultyValue : "intermediate";
+    const turnCount = Number(form.get("turnCount") ?? 1);
     const rawHistory = String(form.get("history") ?? "[]");
     const history = JSON.parse(rawHistory) as { role: "assistant" | "user"; text: string }[];
 
@@ -42,6 +43,7 @@ export async function POST(request: Request) {
       transcriptJa,
       topic,
       difficulty,
+      turnCount: Number.isFinite(turnCount) ? turnCount : 1,
       history: [...history, { role: "user", text: transcriptJa }]
     });
     const audioBase64 = await synthesizeJapanese(reply.nextReplyJa);

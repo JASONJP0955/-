@@ -273,6 +273,7 @@ export default function Home() {
       form.set("topic", topic);
       form.set("difficulty", difficulty);
       form.set("history", JSON.stringify(historySnapshot));
+      form.set("turnCount", String(historySnapshot.filter((message) => message.role === "user").length + 1));
 
       const response = await fetch("/api/respond", {
         method: "POST",
