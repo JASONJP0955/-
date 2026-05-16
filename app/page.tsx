@@ -52,7 +52,7 @@ function playBase64Audio(audioBase64?: string, fallbackText?: string) {
 
 export default function Home() {
   const [difficulty, setDifficulty] = useState<Difficulty>("intermediate");
-  const [topic, setTopic] = useState("daily conversation");
+  const [topic, setTopic] = useState("随机选择");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [feedbackByMessageId, setFeedbackByMessageId] = useState<Record<string, CoachReply>>({});
@@ -120,6 +120,7 @@ export default function Home() {
     setFeedbackByMessageId({});
     setSelectedFeedbackId(null);
     setRecordedBlob(null);
+    setTopic("随机选择");
   }
 
   function stopUserAudio() {
@@ -184,6 +185,7 @@ export default function Home() {
       };
 
       setSessionId(data.sessionId);
+      setTopic(data.topic);
       setMessages([message]);
       audioUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
       audioUrlsRef.current = [];
@@ -323,12 +325,12 @@ export default function Home() {
           </div>
 
           <div className="control-block">
-            <label htmlFor="topic">话题</label>
+            <label htmlFor="topic">本轮话题</label>
             <input
               id="topic"
               value={topic}
-              onChange={(event) => setTopic(event.target.value)}
-              placeholder="daily conversation"
+              readOnly
+              placeholder="点击开始会话后随机选择"
             />
           </div>
 
