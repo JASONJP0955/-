@@ -964,8 +964,21 @@ code {
 }
 
 @media (max-width: 760px) {
+  html,
+  body {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  body {
+    -webkit-overflow-scrolling: touch;
+  }
+
   .shell {
     height: auto;
+    min-height: 100dvh;
     overflow: visible;
     padding: 12px;
   }
@@ -974,6 +987,24 @@ code {
     grid-template-columns: 1fr;
     height: auto;
     min-height: auto;
+  }
+
+  .side-panel,
+  .chat-panel,
+  .feedback-panel {
+    overflow: visible;
+  }
+
+  .side-panel {
+    align-self: auto;
+  }
+
+  .chat-panel {
+    grid-template-rows: auto auto auto;
+  }
+
+  .messages {
+    overflow: visible;
   }
 
   .message {
