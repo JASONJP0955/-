@@ -214,7 +214,7 @@ export async function evaluateFeedback(params: {
   transcriptJa: string;
   topic: string;
   difficulty: Difficulty;
-  history: { role: "assistant" | "user"; text: string }[];
+  contextQuestionJa?: string;
 }) {
   const schema = {
     type: "object",
@@ -306,15 +306,16 @@ export async function evaluateFeedback(params: {
       {
         role: "developer",
         content:
-          "You are a Japanese speaking coach for Chinese native speakers. Feedback must be concise Chinese text. Do not continue the conversation here. In errorFeedback, list concrete problems in the learner's exact utterance, including vocabulary, grammar, particles, tense, word choice, and unnatural expressions. For each item, cite the original Japanese fragment, explain the issue in Chinese, give an actionable Chinese suggestion, and provide one corrected Japanese version. If there is no clear error, include only one improvement item about richness or naturalness. Pronunciation feedback is based on transcript-level evidence, so phrase it as likely or practice-focused unless the issue is certain."
+          "You are a Japanese speaking coach for Chinese native speakers. Feedback must be concise Chinese text. Do not continue the conversation here. Analyze only targetTranscriptJa. Do not analyze contextQuestionJa or any previous conversation text. In errorFeedback, list concrete problems in targetTranscriptJa only, including vocabulary, grammar, particles, tense, word choice, and unnatural expressions. For each item, cite an original Japanese fragment that appears in targetTranscriptJa, explain the issue in Chinese, give an actionable Chinese suggestion, and provide one corrected Japanese version. If there is no clear error, include only one improvement item about richness or naturalness. Pronunciation feedback is based on transcript-level evidence, so phrase it as likely or practice-focused unless the issue is certain."
       },
       {
         role: "user",
         content: JSON.stringify({
-          task: "Evaluate the learner's Japanese answer. Return only text feedback and scores.",
+          task: "Evaluate only targetTranscriptJa. Return only text feedback and scores for targetTranscriptJa.",
           topic: params.topic,
           difficulty: params.difficulty,
-          history: params.history.slice(-8),
+          contextQuestionJa: params.contextQuestionJa ?? "",
+          targetTranscriptJa: params.transcriptJa,
           transcriptJa: params.transcriptJa
         })
       }

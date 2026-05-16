@@ -26,8 +26,7 @@ export async function POST(request: Request) {
     const nextReplyJa = String(form.get("nextReplyJa") ?? "");
     const topicState = isTopicState(form.get("topicState"));
     const nextTopicSuggestionZh = String(form.get("nextTopicSuggestionZh") ?? "");
-    const rawHistory = String(form.get("history") ?? "[]");
-    const history = JSON.parse(rawHistory) as { role: "assistant" | "user"; text: string }[];
+    const contextQuestionJa = String(form.get("contextQuestionJa") ?? "");
 
     if (!(audio instanceof File)) {
       return NextResponse.json({ error: "没有收到录音文件。" }, { status: 400 });
@@ -53,7 +52,7 @@ export async function POST(request: Request) {
       transcriptJa,
       topic,
       difficulty,
-      history
+      contextQuestionJa
     });
     const coach: CoachReply = {
       ...feedback,

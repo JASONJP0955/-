@@ -326,14 +326,7 @@ export default function Home() {
       form.set("nextReplyJa", fastReply.nextReplyJa);
       form.set("topicState", fastReply.topicState);
       form.set("nextTopicSuggestionZh", fastReply.nextTopicSuggestionZh);
-      form.set(
-        "history",
-        JSON.stringify([
-          ...historySnapshot,
-          { role: "user", text: fastReply.transcriptJa },
-          { role: "assistant", text: fastReply.nextReplyJa }
-        ])
-      );
+      form.set("contextQuestionJa", [...historySnapshot].reverse().find((message) => message.role === "assistant")?.text ?? "");
 
       const response = await fetch("/api/feedback", {
         method: "POST",
