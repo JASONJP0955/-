@@ -18,8 +18,10 @@
 
 html,
 body {
+  height: 100%;
   margin: 0;
   min-height: 100%;
+  overflow: hidden;
 }
 
 body {
@@ -45,7 +47,9 @@ button:disabled {
 }
 
 .shell {
-  min-height: 100vh;
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
   padding: 24px;
 }
 
@@ -53,9 +57,10 @@ button:disabled {
   display: grid;
   grid-template-columns: 280px minmax(360px, 1fr) 360px;
   gap: 18px;
+  height: calc(100vh - 48px);
   margin: 0 auto;
   max-width: 1440px;
-  min-height: calc(100vh - 48px);
+  min-height: 0;
 }
 
 .side-panel,
@@ -65,6 +70,7 @@ button:disabled {
   border: 1px solid var(--line);
   border-radius: 8px;
   box-shadow: var(--shadow);
+  min-height: 0;
 }
 
 .side-panel,
@@ -77,6 +83,7 @@ button:disabled {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  overflow-y: auto;
 }
 
 .brand-lockup {
@@ -223,8 +230,9 @@ input {
 
 .chat-panel {
   display: grid;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   min-width: 0;
+  overflow: hidden;
 }
 
 .chat-header,
@@ -251,6 +259,7 @@ input {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-height: 0;
   overflow-y: auto;
   padding: 20px;
 }
@@ -348,8 +357,8 @@ input {
 .recorder {
   border-top: 1px solid var(--line);
   display: grid;
-  gap: 14px;
-  padding: 18px 20px;
+  gap: 10px;
+  padding: 14px 20px;
 }
 
 .wave {
@@ -360,7 +369,7 @@ input {
   display: grid;
   gap: 5px;
   grid-template-columns: repeat(18, 1fr);
-  height: 74px;
+  height: 58px;
   padding: 12px;
 }
 
@@ -421,6 +430,7 @@ input {
 }
 
 .feedback-panel {
+  min-height: 0;
   overflow-y: auto;
   padding: 0;
 }
@@ -532,11 +542,14 @@ code {
 
 @media (max-width: 760px) {
   .shell {
+    height: auto;
+    overflow: visible;
     padding: 12px;
   }
 
   .workspace {
     grid-template-columns: 1fr;
+    height: auto;
     min-height: auto;
   }
 

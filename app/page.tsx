@@ -66,6 +66,7 @@ export default function Home() {
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
   const audioUrlsRef = useRef<string[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const latestAssistant = useMemo(
     () => [...messages].reverse().find((message) => message.role === "assistant"),
@@ -93,6 +94,10 @@ export default function Home() {
       window.speechSynthesis?.cancel();
     };
   }, []);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
+  }, [messages.length]);
 
   function createAudioUrl(blob: Blob) {
     const url = URL.createObjectURL(blob);
@@ -362,6 +367,7 @@ export default function Home() {
                 </article>
               ))
             )}
+            <div ref={messagesEndRef} />
           </div>
 
           <div className="recorder">
