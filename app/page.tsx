@@ -176,7 +176,10 @@ export default function Home() {
         body: form
       });
 
-      if (!response.ok) throw new Error(await response.text());
+      if (!response.ok) {
+        const detail = await response.json().catch(() => null);
+        throw new Error(detail?.error ?? "分析失败，请稍后再试。");
+      }
       const data = (await response.json()) as CoachResponse;
       const userMessage: ChatMessage = {
         id: nowId(),

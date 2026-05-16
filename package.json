@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "check:secrets": "node scripts/check-no-secrets.mjs",
     "start": "next start",
     "lint": "next lint"
   },

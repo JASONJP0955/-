@@ -2,6 +2,31 @@ const OPENAI_BASE_URL = "https://api.openai.com/v1";
 
 type JsonObject = Record<string, unknown>;
 
+function extractResponseText(data: unknown) {
+  if (!data || typeof data !== "object") return "";
+
+  const response = data as {
+    output_text?: unknown;
+    output?: {
+      content?: {
+        type?: string;
+        text?: unknown;
+      }[];
+    }[];
+  };
+
+  if (typeof response.output_text === "string" && response.output_text.trim()) {
+    return response.output_text;
+  }
+
+  const contentText = response.output
+    ?.flatMap((item) => item.content ?? [])
+    .map((content) => content.text)
+    .find((text): text is string => typeof text === "string" && text.trim().length > 0);
+
+  return contentText ?? "";
+}
+
 export function hasOpenAIKey() {
   const key = process.env.OPENAI_API_KEY?.trim();
   return Boolean(key && key.startsWith("sk-") && key !== "sk-your-key-here");
@@ -33,10 +58,10 @@ export async function createResponseJson<T>(payload: JsonObject): Promise<T> {
   }
 
   const data = await response.json();
-  const text = data.output_text;
+  const text = extractResponseText(data);
 
-  if (typeof text !== "string") {
-    throw new Error("OpenAI response did not include output_text.");
+  if (!text) {
+    throw new Error("OpenAI response did not include text output.");
   }
 
   return JSON.parse(text) as T;
