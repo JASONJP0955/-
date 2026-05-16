@@ -59,6 +59,16 @@ alter table public.conversation_sessions enable row level security;
 alter table public.utterances enable row level security;
 alter table public.feedback enable row level security;
 
+drop policy if exists "Users can read their profile" on public.profiles;
+drop policy if exists "Users can update their profile" on public.profiles;
+drop policy if exists "Users can read their sessions" on public.conversation_sessions;
+drop policy if exists "Users can create their sessions" on public.conversation_sessions;
+drop policy if exists "Users can update their sessions" on public.conversation_sessions;
+drop policy if exists "Users can read their utterances" on public.utterances;
+drop policy if exists "Users can create their utterances" on public.utterances;
+drop policy if exists "Users can read their feedback" on public.feedback;
+drop policy if exists "Users can create their feedback" on public.feedback;
+
 create policy "Users can read their profile"
   on public.profiles for select
   using (auth.uid() = id);
@@ -123,6 +133,10 @@ create trigger on_auth_user_created
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('user-recordings', 'user-recordings', false, 52428800, array['audio/webm', 'audio/ogg', 'audio/mpeg', 'audio/wav'])
 on conflict (id) do nothing;
+
+drop policy if exists "Users can upload their recordings" on storage.objects;
+drop policy if exists "Users can read their recordings" on storage.objects;
+drop policy if exists "Users can delete their recordings" on storage.objects;
 
 create policy "Users can upload their recordings"
   on storage.objects for insert
