@@ -51,6 +51,9 @@ export type ApiStatus = {
   openaiConfigured: boolean;
   googleConfigured: boolean;
   speechConfigured: boolean;
+  supabaseConfigured: boolean;
+  authenticated: boolean;
+  userEmail: string | null;
   sttProvider: "openai" | "google";
   sttModel: string;
 };

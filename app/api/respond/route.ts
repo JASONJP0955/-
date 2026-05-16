@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { demoReply, evaluateAndContinue } from "@/lib/coach";
 import { hasOpenAIKey, synthesizeJapanese } from "@/lib/openai";
+import { saveConversationTurn } from "@/lib/persistence";
 import { transcribeJapanese } from "@/lib/speech";
 import type { Difficulty } from "@/types/coach";
 
@@ -15,6 +16,7 @@ export async function POST(request: Request) {
     const form = await request.formData();
     const audio = form.get("audio");
     const topic = String(form.get("topic") ?? "daily conversation");
+    const sessionId = String(form.get("sessionId") || crypto.randomUUID());
     const difficultyValue = form.get("difficulty");
     const difficulty = isDifficulty(difficultyValue) ? difficultyValue : "intermediate";
     const rawHistory = String(form.get("history") ?? "[]");
@@ -28,7 +30,8 @@ export async function POST(request: Request) {
       return NextResponse.json({
         ...demoReply(),
         audioBase64: undefined,
-        demoMode: true
+        demoMode: true,
+        persisted: false
       });
     }
 
@@ -40,11 +43,19 @@ export async function POST(request: Request) {
       history: [...history, { role: "user", text: transcriptJa }]
     });
     const audioBase64 = await synthesizeJapanese(coach.nextReplyJa);
+    const persistence = await saveConversationTurn({
+      sessionId,
+      topic,
+      difficulty,
+      audio,
+      coach
+    });
 
     return NextResponse.json({
       ...coach,
       audioBase64,
-      demoMode: false
+      demoMode: false,
+      persisted: persistence.persisted
     });
   } catch (error) {
     console.error(error);

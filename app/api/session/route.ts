@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSessionStarter } from "@/lib/coach";
 import { hasOpenAIKey, synthesizeJapanese } from "@/lib/openai";
+import { createConversationSession } from "@/lib/persistence";
 import type { Difficulty, SessionStart } from "@/types/coach";
 
 export const runtime = "nodejs";
@@ -14,6 +15,7 @@ export async function POST(request: Request) {
   const difficulty = isDifficulty(body.difficulty) ? body.difficulty : "intermediate";
   const topic = typeof body.topic === "string" && body.topic.trim() ? body.topic.trim() : "daily conversation";
   const assistantText = createSessionStarter(difficulty);
+  const sessionId = crypto.randomUUID();
   let audioBase64: string | undefined;
 
   if (hasOpenAIKey()) {
@@ -21,13 +23,20 @@ export async function POST(request: Request) {
   }
 
   const payload: SessionStart = {
-    sessionId: crypto.randomUUID(),
+    sessionId,
     topic,
     difficulty,
     assistantText,
     audioBase64,
     demoMode: !hasOpenAIKey()
   };
+
+  await createConversationSession({
+    sessionId,
+    topic,
+    difficulty,
+    assistantText
+  });
 
   return NextResponse.json(payload);
 }

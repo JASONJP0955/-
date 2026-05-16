@@ -18,6 +18,7 @@ import type { ApiStatus, ChatMessage, CoachReply, Difficulty, SessionStart } fro
 type CoachResponse = CoachReply & {
   audioBase64?: string;
   demoMode: boolean;
+  persisted?: boolean;
 };
 
 const difficultyLabels: Record<Difficulty, string> = {
@@ -255,6 +256,7 @@ export default function Home() {
     try {
       const form = new FormData();
       form.set("audio", new File([audioBlob], "answer.webm", { type: audioBlob.type || "audio/webm" }));
+      form.set("sessionId", sessionId ?? "");
       form.set("topic", topic);
       form.set("difficulty", difficulty);
       form.set(
@@ -355,6 +357,26 @@ export default function Home() {
             <Volume2 size={18} />
             重播机器人
           </button>
+
+          {apiStatus?.supabaseConfigured ? (
+            <div className="account-actions">
+              <a className="ghost-action" href="/history">
+                历史记录
+              </a>
+              {apiStatus.authenticated ? (
+                <form action="/auth/signout" method="post">
+                  <button className="ghost-action" type="submit">
+                    退出登录
+                  </button>
+                </form>
+              ) : (
+                <a className="ghost-action" href="/login">
+                  登录 / 注册
+                </a>
+              )}
+              {apiStatus.userEmail ? <p className="account-email">{apiStatus.userEmail}</p> : null}
+            </div>
+          ) : null}
 
           <div className="status-strip">
             <CheckCircle2 size={17} />
