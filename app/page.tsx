@@ -161,9 +161,21 @@ export default function Home() {
     setRecordedBlob(null);
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          autoGainControl: false,
+          channelCount: { ideal: 1 },
+          echoCancellation: false,
+          noiseSuppression: false,
+          sampleRate: { ideal: 48000 },
+          sampleSize: { ideal: 16 }
+        }
+      });
       const mimeType = ["audio/webm;codecs=opus", "audio/webm"].find((type) => MediaRecorder.isTypeSupported(type));
-      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+      const recorder = new MediaRecorder(stream, {
+        ...(mimeType ? { mimeType } : {}),
+        audioBitsPerSecond: 128000
+      });
       streamRef.current = stream;
       recorderRef.current = recorder;
       chunksRef.current = [];
