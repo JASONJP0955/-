@@ -34,17 +34,23 @@ export type CoachScores = {
   fluency: number;
 };
 
-export type CoachReply = {
+export type CoachFeedback = {
   transcriptJa: string;
   errorFeedback: ErrorFeedback[];
   grammarFeedback: GrammarFeedback[];
   pronunciationFeedback: PronunciationFeedback[];
   naturalExpressionJa: string;
+  scores: CoachScores;
+};
+
+export type CoachQuickReply = {
+  transcriptJa: string;
   nextReplyJa: string;
   topicState: "continue" | "shift" | "wrap_up";
   nextTopicSuggestionZh: string;
-  scores: CoachScores;
 };
+
+export type CoachReply = CoachFeedback & CoachQuickReply;
 
 export type SessionStart = {
   sessionId: string;

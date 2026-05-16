@@ -1,4 +1,4 @@
-import type { CoachReply, Difficulty } from "@/types/coach";
+import type { CoachFeedback, CoachQuickReply, CoachReply, Difficulty } from "@/types/coach";
 import { createResponseJson } from "@/lib/openai";
 
 type StarterTopic = {
@@ -114,7 +114,57 @@ export function demoReply(transcriptJa = "今日は学校に行きました。")
   };
 }
 
-export async function evaluateAndContinue(params: {
+export async function continueConversation(params: {
+  transcriptJa: string;
+  topic: string;
+  difficulty: Difficulty;
+  history: { role: "assistant" | "user"; text: string }[];
+}) {
+  const schema = {
+    type: "object",
+    additionalProperties: false,
+    required: ["transcriptJa", "nextReplyJa", "topicState", "nextTopicSuggestionZh"],
+    properties: {
+      transcriptJa: { type: "string" },
+      nextReplyJa: { type: "string", minLength: 60 },
+      topicState: { type: "string", enum: ["continue", "shift", "wrap_up"] },
+      nextTopicSuggestionZh: { type: "string" }
+    }
+  };
+
+  return createResponseJson<CoachQuickReply>({
+    model: process.env.OPENAI_CHAT_MODEL?.trim() || "gpt-5-mini",
+    reasoning: { effort: "minimal" },
+    text: {
+      verbosity: "low",
+      format: {
+        type: "json_schema",
+        name: "japanese_voice_coach_fast_reply",
+        schema,
+        strict: true
+      }
+    },
+    input: [
+      {
+        role: "developer",
+        content:
+          "You are a warm Japanese conversation partner for Chinese native speakers. Reply only in Japanese. Do not give correction advice here. Continue the topic naturally with 2 to 4 sentences, roughly 80 to 160 Japanese characters. Include a short reaction and one follow-up question."
+      },
+      {
+        role: "user",
+        content: JSON.stringify({
+          task: "Continue the Japanese conversation quickly.",
+          topic: params.topic,
+          difficulty: params.difficulty,
+          history: params.history.slice(-8),
+          transcriptJa: params.transcriptJa
+        })
+      }
+    ]
+  });
+}
+
+export async function evaluateFeedback(params: {
   transcriptJa: string;
   topic: string;
   difficulty: Difficulty;
@@ -129,9 +179,6 @@ export async function evaluateAndContinue(params: {
       "grammarFeedback",
       "pronunciationFeedback",
       "naturalExpressionJa",
-      "nextReplyJa",
-      "topicState",
-      "nextTopicSuggestionZh",
       "scores"
     ],
     properties: {
@@ -184,9 +231,6 @@ export async function evaluateAndContinue(params: {
         }
       },
       naturalExpressionJa: { type: "string" },
-      nextReplyJa: { type: "string", minLength: 60 },
-      topicState: { type: "string", enum: ["continue", "shift", "wrap_up"] },
-      nextTopicSuggestionZh: { type: "string" },
       scores: {
         type: "object",
         additionalProperties: false,
@@ -200,14 +244,14 @@ export async function evaluateAndContinue(params: {
     }
   };
 
-  return createResponseJson<CoachReply>({
+  return createResponseJson<CoachFeedback>({
     model: process.env.OPENAI_CHAT_MODEL?.trim() || "gpt-5-mini",
     reasoning: { effort: "low" },
     text: {
       verbosity: "medium",
       format: {
         type: "json_schema",
-        name: "japanese_voice_coach_reply",
+        name: "japanese_voice_coach_feedback",
         schema,
         strict: true
       }
@@ -216,12 +260,12 @@ export async function evaluateAndContinue(params: {
       {
         role: "developer",
         content:
-          "You are a Japanese speaking coach for Chinese native speakers. Continue the conversation in Japanese. Feedback must be concise Chinese text. The spoken assistant reply must never read correction advice aloud. In errorFeedback, list concrete problems in the learner's exact utterance, including vocabulary, grammar, particles, tense, word choice, and unnatural expressions. For each item, cite the original Japanese fragment, explain the issue in Chinese, give an actionable Chinese suggestion, and provide one corrected Japanese version. If there is no clear error, include only one improvement item about richness or naturalness. Pronunciation feedback is based on transcript-level evidence, so phrase it as likely or practice-focused unless the issue is certain. Make nextReplyJa warmer and longer than a normal chatbot turn: 3 to 5 natural Japanese sentences, roughly 120 to 220 Japanese characters. Include a short reaction to the learner's answer, one topic-expanding detail or example, and one specific follow-up question. Do not reply with only a short standalone question."
+          "You are a Japanese speaking coach for Chinese native speakers. Feedback must be concise Chinese text. Do not continue the conversation here. In errorFeedback, list concrete problems in the learner's exact utterance, including vocabulary, grammar, particles, tense, word choice, and unnatural expressions. For each item, cite the original Japanese fragment, explain the issue in Chinese, give an actionable Chinese suggestion, and provide one corrected Japanese version. If there is no clear error, include only one improvement item about richness or naturalness. Pronunciation feedback is based on transcript-level evidence, so phrase it as likely or practice-focused unless the issue is certain."
       },
       {
         role: "user",
         content: JSON.stringify({
-          task: "Evaluate the learner's Japanese answer and continue the conversation.",
+          task: "Evaluate the learner's Japanese answer. Return only text feedback and scores.",
           topic: params.topic,
           difficulty: params.difficulty,
           history: params.history.slice(-8),

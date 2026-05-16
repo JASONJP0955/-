@@ -13,13 +13,19 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { ApiStatus, ChatMessage, CoachReply, Difficulty, SessionStart } from "@/types/coach";
+import type { ApiStatus, ChatMessage, CoachQuickReply, CoachReply, Difficulty, SessionStart } from "@/types/coach";
 
-type CoachResponse = CoachReply & {
+type FastResponse = CoachQuickReply & {
   audioBase64?: string;
+  demoMode: boolean;
+};
+
+type FeedbackResponse = CoachReply & {
   demoMode: boolean;
   persisted?: boolean;
 };
+
+type FeedbackStatus = "pending" | "error";
 
 const difficultyLabels: Record<Difficulty, string> = {
   beginner: "初级",
@@ -56,6 +62,7 @@ export default function Home() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [feedbackByMessageId, setFeedbackByMessageId] = useState<Record<string, CoachReply>>({});
+  const [feedbackStatusByMessageId, setFeedbackStatusByMessageId] = useState<Record<string, FeedbackStatus>>({});
   const [selectedFeedbackId, setSelectedFeedbackId] = useState<string | null>(null);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -78,6 +85,7 @@ export default function Home() {
     [messages]
   );
   const selectedFeedback = selectedFeedbackId ? feedbackByMessageId[selectedFeedbackId] : null;
+  const selectedFeedbackStatus = selectedFeedbackId ? feedbackStatusByMessageId[selectedFeedbackId] : null;
   const selectedUserMessage = selectedFeedbackId
     ? messages.find((message) => message.id === selectedFeedbackId && message.role === "user")
     : null;
@@ -118,6 +126,7 @@ export default function Home() {
     audioUrlsRef.current = [];
     setMessages([]);
     setFeedbackByMessageId({});
+    setFeedbackStatusByMessageId({});
     setSelectedFeedbackId(null);
     setRecordedBlob(null);
     setTopic("随机选择");
@@ -256,15 +265,13 @@ export default function Home() {
     setError(null);
 
     try {
+      const historySnapshot = messages.map((message) => ({ role: message.role, text: message.text }));
       const form = new FormData();
       form.set("audio", new File([audioBlob], "answer.webm", { type: audioBlob.type || "audio/webm" }));
       form.set("sessionId", sessionId ?? "");
       form.set("topic", topic);
       form.set("difficulty", difficulty);
-      form.set(
-        "history",
-        JSON.stringify(messages.map((message) => ({ role: message.role, text: message.text })))
-      );
+      form.set("history", JSON.stringify(historySnapshot));
 
       const response = await fetch("/api/respond", {
         method: "POST",
@@ -275,7 +282,7 @@ export default function Home() {
         const detail = await response.json().catch(() => null);
         throw new Error(detail?.error ?? "分析失败，请稍后再试。");
       }
-      const data = (await response.json()) as CoachResponse;
+      const data = (await response.json()) as FastResponse;
       const userMessageId = nowId();
       const audioUrl = createAudioUrl(audioBlob);
       const userMessage: ChatMessage = {
@@ -293,18 +300,68 @@ export default function Home() {
       };
 
       setMessages((current) => [...current, userMessage, assistantMessage]);
-      setFeedbackByMessageId((current) => ({
-        ...current,
-        [userMessageId]: data
-      }));
+      setFeedbackStatusByMessageId((current) => ({ ...current, [userMessageId]: "pending" }));
       setSelectedFeedbackId(userMessageId);
       setDemoMode(data.demoMode);
       setRecordedBlob(null);
       playBase64Audio(data.audioBase64, data.nextReplyJa);
+      void loadDetailedFeedback(userMessageId, audioBlob, data, historySnapshot);
     } catch (err) {
       setError(err instanceof Error ? err.message : "分析失败");
     } finally {
       setIsBusy(false);
+    }
+  }
+
+  async function loadDetailedFeedback(
+    userMessageId: string,
+    audioBlob: Blob,
+    fastReply: FastResponse,
+    historySnapshot: { role: "assistant" | "user"; text: string }[]
+  ) {
+    try {
+      const form = new FormData();
+      form.set("audio", new File([audioBlob], "answer.webm", { type: audioBlob.type || "audio/webm" }));
+      form.set("sessionId", sessionId ?? "");
+      form.set("topic", topic);
+      form.set("difficulty", difficulty);
+      form.set("transcriptJa", fastReply.transcriptJa);
+      form.set("nextReplyJa", fastReply.nextReplyJa);
+      form.set("topicState", fastReply.topicState);
+      form.set("nextTopicSuggestionZh", fastReply.nextTopicSuggestionZh);
+      form.set(
+        "history",
+        JSON.stringify([
+          ...historySnapshot,
+          { role: "user", text: fastReply.transcriptJa },
+          { role: "assistant", text: fastReply.nextReplyJa }
+        ])
+      );
+
+      const response = await fetch("/api/feedback", {
+        method: "POST",
+        body: form
+      });
+
+      if (!response.ok) {
+        const detail = await response.json().catch(() => null);
+        throw new Error(detail?.error ?? "反馈生成失败，请稍后再试。");
+      }
+
+      const data = (await response.json()) as FeedbackResponse;
+      setFeedbackByMessageId((current) => ({
+        ...current,
+        [userMessageId]: data
+      }));
+      setFeedbackStatusByMessageId((current) => {
+        const next = { ...current };
+        delete next[userMessageId];
+        return next;
+      });
+      setDemoMode(data.demoMode);
+    } catch (err) {
+      console.error(err);
+      setFeedbackStatusByMessageId((current) => ({ ...current, [userMessageId]: "error" }));
     }
   }
 
@@ -459,7 +516,7 @@ export default function Home() {
               {isBusy && !isRecording ? (
                 <button type="button" className="record-button busy" disabled>
                   <Loader2 className="spin" size={20} />
-                  分析中
+                  回应中
                 </button>
               ) : !isRecording ? (
                 <button type="button" className="record-button" onClick={startRecording} disabled={!sessionId || isBusy}>
@@ -564,6 +621,34 @@ export default function Home() {
                 )}
               </section>
 
+            </div>
+          ) : selectedFeedbackId && selectedFeedbackStatus ? (
+            <div className="feedback-stack">
+              <section>
+                <div className="answer-toolbar">
+                  <h3>你的回答</h3>
+                  {selectedUserMessage?.audioUrl ? (
+                    <button
+                      type="button"
+                      className="mini-action"
+                      onClick={() => playUserAudio(selectedUserMessage.audioUrl)}
+                    >
+                      <Volume2 size={15} />
+                      播放录音
+                    </button>
+                  ) : null}
+                </div>
+                <p className="quote-ja">{selectedUserMessage?.text ?? "正在整理你的回答..."}</p>
+              </section>
+
+              <section>
+                <h3>{selectedFeedbackStatus === "pending" ? "详细反馈生成中" : "反馈生成失败"}</h3>
+                <p className={selectedFeedbackStatus === "pending" ? "notice" : "error"}>
+                  {selectedFeedbackStatus === "pending"
+                    ? "机器人已经先回复你了，语法、词汇、发音和分数会稍后显示在这里。"
+                    : "这一轮的详细反馈没有生成成功。你可以继续练习，或重新录一次。"}
+                </p>
+              </section>
             </div>
           ) : (
             <div className="empty-state compact">
