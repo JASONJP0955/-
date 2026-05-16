@@ -3,19 +3,19 @@ import { createResponseJson } from "@/lib/openai";
 
 const starters: Record<Difficulty, string[]> = {
   beginner: [
-    "こんにちは。今日は何をしましたか？",
-    "好きな食べ物は何ですか？どうして好きですか？",
-    "週末はどこへ行きたいですか？"
+    "こんにちは。今日はどんな一日でしたか？学校や仕事、家でのことなど、簡単に話してみてください。",
+    "好きな食べ物について話しましょう。何が好きですか？いつ、だれと食べることが多いですか？",
+    "週末の予定について聞かせてください。どこへ行きたいですか？そこで何をしたいですか？"
   ],
   intermediate: [
-    "最近、何か新しく始めたことはありますか？",
-    "日本語を勉強していて、一番難しいと感じるところは何ですか？",
-    "旅行するとしたら、日本のどの町に行ってみたいですか？"
+    "最近、何か新しく始めたことはありますか？始めた理由や、続けてみて感じたことも一緒に話してみてください。",
+    "日本語を勉強していて、一番難しいと感じるところは何ですか？文法、発音、会話など、具体的な場面を挙げて説明してみましょう。",
+    "旅行するとしたら、日本のどの町に行ってみたいですか？その町で見たいもの、食べたいもの、体験したいことも教えてください。"
   ],
   advanced: [
-    "最近のニュースで気になった話題について、あなたの意見を聞かせてください。",
-    "仕事や勉強で AI を使うことについて、良い点と心配な点は何だと思いますか？",
-    "日本語で自然に話すために、どんな練習が一番効果的だと思いますか？"
+    "最近のニュースで気になった話題について、あなたの意見を聞かせてください。なぜその話題が気になったのか、賛成か反対かも含めて話してみましょう。",
+    "仕事や勉強で AI を使うことについて、良い点と心配な点は何だと思いますか？自分の経験や身近な例を使って説明してみてください。",
+    "日本語で自然に話すために、どんな練習が一番効果的だと思いますか？あなた自身の学習方法と、その方法の長所や限界について話してみましょう。"
   ]
 };
 
@@ -47,7 +47,8 @@ export function demoReply(transcriptJa = "今日は学校に行きました。")
       }
     ],
     naturalExpressionJa: "今日は学校に行って、友達と勉強しました。",
-    nextReplyJa: "いいですね。学校では何を勉強しましたか？",
+    nextReplyJa:
+      "いいですね。学校で勉強したことについて、もう少し詳しく聞きたいです。たとえば、どの科目を勉強しましたか？その授業は難しかったですか、それとも楽しかったですか？",
     topicState: "continue",
     nextTopicSuggestionZh: "继续聊学校和学习内容。",
     scores: {
@@ -110,7 +111,7 @@ export async function evaluateAndContinue(params: {
         }
       },
       naturalExpressionJa: { type: "string" },
-      nextReplyJa: { type: "string" },
+      nextReplyJa: { type: "string", minLength: 60 },
       topicState: { type: "string", enum: ["continue", "shift", "wrap_up"] },
       nextTopicSuggestionZh: { type: "string" },
       scores: {
@@ -130,7 +131,7 @@ export async function evaluateAndContinue(params: {
     model: process.env.OPENAI_CHAT_MODEL ?? "gpt-5-mini",
     reasoning: { effort: "low" },
     text: {
-      verbosity: "low",
+      verbosity: "medium",
       format: {
         type: "json_schema",
         name: "japanese_voice_coach_reply",
@@ -142,7 +143,7 @@ export async function evaluateAndContinue(params: {
       {
         role: "developer",
         content:
-          "You are a Japanese speaking coach for Chinese native speakers. Continue the conversation in Japanese. Feedback must be concise Chinese text. The spoken assistant reply must never read correction advice aloud. Pronunciation feedback is based on transcript-level evidence, so phrase it as likely or practice-focused unless the issue is certain. Keep the next Japanese reply to one or two natural sentences."
+          "You are a Japanese speaking coach for Chinese native speakers. Continue the conversation in Japanese. Feedback must be concise Chinese text. The spoken assistant reply must never read correction advice aloud. Pronunciation feedback is based on transcript-level evidence, so phrase it as likely or practice-focused unless the issue is certain. Make nextReplyJa warmer and longer than a normal chatbot turn: 3 to 5 natural Japanese sentences, roughly 120 to 220 Japanese characters. Include a short reaction to the learner's answer, one topic-expanding detail or example, and one specific follow-up question. Do not reply with only a short standalone question."
       },
       {
         role: "user",
