@@ -57,6 +57,7 @@ export async function POST(request: Request) {
     });
     const coach: CoachReply = {
       ...feedback,
+      transcriptJa,
       nextReplyJa,
       topicState,
       nextTopicSuggestionZh

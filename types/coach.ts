@@ -44,7 +44,6 @@ export type CoachFeedback = {
 };
 
 export type CoachQuickReply = {
-  transcriptJa: string;
   nextReplyJa: string;
   topicState: "continue" | "shift" | "wrap_up";
   nextTopicSuggestionZh: string;

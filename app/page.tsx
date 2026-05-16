@@ -16,6 +16,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { ApiStatus, ChatMessage, CoachQuickReply, CoachReply, Difficulty, SessionStart } from "@/types/coach";
 
 type FastResponse = CoachQuickReply & {
+  transcriptJa: string;
   audioBase64?: string;
   demoMode: boolean;
 };

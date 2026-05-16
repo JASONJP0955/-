@@ -47,6 +47,7 @@ export async function POST(request: Request) {
     const audioBase64 = await synthesizeJapanese(reply.nextReplyJa);
 
     return NextResponse.json({
+      transcriptJa,
       ...reply,
       audioBase64,
       demoMode: false

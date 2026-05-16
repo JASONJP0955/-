@@ -123,9 +123,8 @@ export async function continueConversation(params: {
   const schema = {
     type: "object",
     additionalProperties: false,
-    required: ["transcriptJa", "nextReplyJa", "topicState", "nextTopicSuggestionZh"],
+    required: ["nextReplyJa", "topicState", "nextTopicSuggestionZh"],
     properties: {
-      transcriptJa: { type: "string" },
       nextReplyJa: { type: "string", minLength: 60 },
       topicState: { type: "string", enum: ["continue", "shift", "wrap_up"] },
       nextTopicSuggestionZh: { type: "string" }
