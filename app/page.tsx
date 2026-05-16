@@ -68,6 +68,9 @@ export default function Home() {
   const audioUrlsRef = useRef<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const playbackContextRef = useRef<AudioContext | null>(null);
+  const currentUserAudioRef = useRef<HTMLAudioElement | null>(null);
+  const currentUserAudioSourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const currentUserAudioGainRef = useRef<GainNode | null>(null);
 
   const latestAssistant = useMemo(
     () => [...messages].reverse().find((message) => message.role === "assistant"),
@@ -92,6 +95,7 @@ export default function Home() {
     return () => {
       streamRef.current?.getTracks().forEach((track) => track.stop());
       audioUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      stopUserAudio();
       playbackContextRef.current?.close();
       window.speechSynthesis?.cancel();
     };
@@ -108,6 +112,7 @@ export default function Home() {
   }
 
   function resetConversation() {
+    stopUserAudio();
     audioUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     audioUrlsRef.current = [];
     setMessages([]);
@@ -116,8 +121,22 @@ export default function Home() {
     setRecordedBlob(null);
   }
 
+  function stopUserAudio() {
+    currentUserAudioRef.current?.pause();
+    if (currentUserAudioRef.current) {
+      currentUserAudioRef.current.currentTime = 0;
+    }
+    currentUserAudioSourceRef.current?.disconnect();
+    currentUserAudioGainRef.current?.disconnect();
+    currentUserAudioRef.current = null;
+    currentUserAudioSourceRef.current = null;
+    currentUserAudioGainRef.current = null;
+  }
+
   async function playUserAudio(audioUrl?: string) {
     if (!audioUrl) return;
+
+    stopUserAudio();
 
     try {
       const audio = new Audio(audioUrl);
@@ -129,11 +148,16 @@ export default function Home() {
       gain.gain.value = 2.5;
       source.connect(gain);
       gain.connect(context.destination);
+      currentUserAudioSourceRef.current = source;
+      currentUserAudioGainRef.current = gain;
+      currentUserAudioRef.current = audio;
       await context.resume();
+      audio.currentTime = 0;
       await audio.play();
     } catch {
       const audio = new Audio(audioUrl);
       audio.volume = 1;
+      currentUserAudioRef.current = audio;
       void audio.play();
     }
   }
@@ -439,6 +463,15 @@ export default function Home() {
           {selectedFeedback ? (
             <div className="feedback-stack">
               <section>
+                <h3>分数</h3>
+                <div className="score-grid">
+                  <span>语法 {selectedFeedback.scores.grammar}</span>
+                  <span>发音 {selectedFeedback.scores.pronunciation}</span>
+                  <span>流畅 {selectedFeedback.scores.fluency}</span>
+                </div>
+              </section>
+
+              <section>
                 <div className="answer-toolbar">
                   <h3>你的回答</h3>
                   {selectedUserMessage?.audioUrl ? (
@@ -490,14 +523,6 @@ export default function Home() {
                 )}
               </section>
 
-              <section>
-                <h3>分数</h3>
-                <div className="score-grid">
-                  <span>语法 {selectedFeedback.scores.grammar}</span>
-                  <span>发音 {selectedFeedback.scores.pronunciation}</span>
-                  <span>流畅 {selectedFeedback.scores.fluency}</span>
-                </div>
-              </section>
             </div>
           ) : (
             <div className="empty-state compact">
