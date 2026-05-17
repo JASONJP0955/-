@@ -54,7 +54,7 @@ function playBase64Audio(audioBase64?: string, fallbackText?: string) {
 }
 
 export default function Home() {
-  const [topic, setTopic] = useState("随机选择");
+  const [topic, setTopic] = useState("日本就职面试");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [feedbackByMessageId, setFeedbackByMessageId] = useState<Record<string, CoachReply>>({});
@@ -125,7 +125,7 @@ export default function Home() {
     setFeedbackStatusByMessageId({});
     setSelectedFeedbackId(null);
     setRecordedBlob(null);
-    setTopic("随机选择");
+    setTopic("日本就职面试");
   }
 
   function stopUserAudio() {
@@ -200,7 +200,7 @@ export default function Home() {
       setDemoMode(data.demoMode);
       playBase64Audio(data.audioBase64, data.assistantText);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "会话启动失败");
+      setError(err instanceof Error ? err.message : "面试启动失败");
     } finally {
       setIsBusy(false);
     }
@@ -377,13 +377,13 @@ export default function Home() {
               id="topic"
               value={topic}
               readOnly
-              placeholder="点击开始会话后随机选择"
+              placeholder="点击开始面试后进入自我介绍"
             />
           </div>
 
           <button className="primary-action" type="button" onClick={startSession} disabled={isBusy}>
             {isBusy ? <Loader2 className="spin" size={18} /> : <Bot size={18} />}
-            开始会话
+            开始面试
           </button>
 
           <button className="ghost-action" type="button" onClick={replayLatest} disabled={!latestAssistant}>
@@ -440,7 +440,7 @@ export default function Home() {
             {messages.length === 0 ? (
               <div className="empty-state">
                 <Bot size={32} />
-                <p>点击开始会话后，机器人会先用日语开口。</p>
+                <p>点击开始面试后，面试官会先用日语寒暄并请你做自我介绍。</p>
               </div>
             ) : (
               messages.map((message) => {

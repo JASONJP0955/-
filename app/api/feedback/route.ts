@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   try {
     const form = await request.formData();
     const audio = form.get("audio");
-    const topic = String(form.get("topic") ?? "daily conversation");
+    const topic = String(form.get("topic") ?? "日本就職面接");
     const sessionId = String(form.get("sessionId") || crypto.randomUUID());
     const difficultyValue = form.get("difficulty");
     const difficulty = isDifficulty(difficultyValue) ? difficultyValue : "intermediate";

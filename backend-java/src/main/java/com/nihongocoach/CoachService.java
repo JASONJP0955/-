@@ -11,6 +11,9 @@ import java.util.Random;
 import java.util.UUID;
 
 final class CoachService {
+  private static final String INTERVIEW_TOPIC = "日本就職面接";
+  private static final String INTERVIEW_STARTER = "本日はお忙しい中、面接にお越しいただきありがとうございます。どうぞリラックスしてお話しください。こちらからいくつか質問しますので、できるだけ具体的にお答えください。それでは、まず自己紹介をお願いします。";
+
   private final OpenAiClient openAi;
   private final SpeechClient speech;
   private final List<StarterTopic> starters;
@@ -37,15 +40,14 @@ final class CoachService {
   }
 
   Map<String, Object> startSession() throws IOException, InterruptedException {
-    StarterTopic selected = starters.get(random.nextInt(starters.size()));
     Map<String, Object> payload = object();
     payload.put("sessionId", UUID.randomUUID().toString());
-    payload.put("topic", selected.topic());
+    payload.put("topic", INTERVIEW_TOPIC);
     payload.put("difficulty", "intermediate");
-    payload.put("assistantText", selected.starter());
+    payload.put("assistantText", INTERVIEW_STARTER);
     payload.put("demoMode", !openAi.hasKey());
     if (openAi.hasKey()) {
-      payload.put("audioBase64", openAi.synthesizeJapanese(selected.starter()));
+      payload.put("audioBase64", openAi.synthesizeJapanese(INTERVIEW_STARTER));
     }
     return payload;
   }
@@ -64,7 +66,7 @@ final class CoachService {
     String transcriptJa = speech.transcribeJapanese(audio);
     Map<String, Object> reply = continueConversation(
       transcriptJa,
-      form.fields.getOrDefault("topic", "daily conversation"),
+      form.fields.getOrDefault("topic", INTERVIEW_TOPIC),
       normalizeDifficulty(form.fields.get("difficulty")),
       safeInt(form.fields.get("turnCount"), 1),
       form.fields.getOrDefault("history", "[]")
@@ -95,7 +97,7 @@ final class CoachService {
 
     Map<String, Object> feedback = evaluateFeedback(
       transcriptJa,
-      form.fields.getOrDefault("topic", "daily conversation"),
+      form.fields.getOrDefault("topic", INTERVIEW_TOPIC),
       normalizeDifficulty(form.fields.get("difficulty")),
       form.fields.getOrDefault("contextQuestionJa", "")
     );
@@ -126,7 +128,9 @@ final class CoachService {
     int turnCount,
     String rawHistory
   ) throws IOException, InterruptedException {
-    boolean shouldShiftTopic = turnCount >= 3 && turnCount % 3 == 0;
+    boolean shouldAskNewInterviewQuestion = turnCount == 1 || (turnCount > 1 && (turnCount - 1) % 3 == 0);
+    int followUpNumber = shouldAskNewInterviewQuestion ? 0 : ((Math.max(turnCount, 2) - 2) % 3) + 1;
+    StarterTopic selectedQuestion = shouldAskNewInterviewQuestion ? randomInterviewQuestion() : null;
     List<Object> history = trimHistory(rawHistory, 8);
     history.add(object("role", "user", "text", transcriptJa));
 
@@ -136,13 +140,18 @@ final class CoachService {
       "low",
       "japanese_voice_coach_fast_reply",
       fastReplySchema(),
-      "You are a warm Japanese conversation partner for Chinese native speakers. Reply only in Japanese. Do not give correction advice here. Continue the topic naturally with 2 to 4 sentences, roughly 80 to 160 Japanese characters. Include a short reaction and one follow-up question. If shouldShiftTopic is true, briefly acknowledge the learner's answer, then clearly move to a fresh everyday conversation topic with a new question. Do not keep expanding the old topic when shouldShiftTopic is true.",
+      "You are a polite Japanese hiring interviewer helping a Chinese native speaker practice job interviews in Japanese. Reply only in Japanese. Do not give correction advice here. Keep a professional interview tone. If askNewInterviewQuestion is true, briefly thank or acknowledge the candidate's latest answer, then ask selectedInterviewQuestionJa as the next main interview question; do not add a second question. If askNewInterviewQuestion is false, ask one deeper follow-up question connected to the candidate's latest answer and the current interview question. This follow-up is number followUpNumber of 2; after two follow-ups, the next turn will move to a different interview question. Use 2 to 4 sentences, roughly 80 to 180 Japanese characters.",
       object(
-        "task", "Continue the Japanese conversation quickly.",
-        "topic", topic,
+        "task", "Continue the Japanese job interview quickly.",
+        "topic", INTERVIEW_TOPIC,
+        "requestedTopicFromClient", topic,
         "difficulty", difficulty,
         "turnCount", turnCount,
-        "shouldShiftTopic", shouldShiftTopic,
+        "askNewInterviewQuestion", shouldAskNewInterviewQuestion,
+        "selectedInterviewQuestionTopic", selectedQuestion == null ? "" : selectedQuestion.topic(),
+        "selectedInterviewQuestionJa", selectedQuestion == null ? "" : selectedQuestion.starter(),
+        "followUpNumber", followUpNumber,
+        "interviewFlowRule", "The first assistant message asked for self-introduction. After the self-introduction answer, ask a random bank question. For each bank question, ask two follow-up questions, then move to another random bank question.",
         "history", history,
         "transcriptJa", transcriptJa
       )
@@ -162,10 +171,11 @@ final class CoachService {
       "medium",
       "japanese_voice_coach_feedback",
       feedbackSchema(),
-      "You are a Japanese speaking coach for Chinese native speakers. Feedback must be concise Chinese text. Do not continue the conversation here. Analyze only targetTranscriptJa. Do not analyze contextQuestionJa or any previous conversation text. In errorFeedback, list concrete problems in targetTranscriptJa only, including vocabulary, grammar, particles, tense, word choice, and unnatural expressions. For each item, cite an original Japanese fragment that appears in targetTranscriptJa, explain the issue in Chinese, give an actionable Chinese suggestion, and provide one corrected Japanese version. If there is no clear error, include only one improvement item about richness or naturalness. Pronunciation feedback is based on transcript-level evidence, so phrase it as likely or practice-focused unless the issue is certain.",
+      "You are a Japanese interview speaking coach for Chinese native speakers. Feedback must be concise Chinese text. Do not continue the conversation here. Analyze only targetTranscriptJa. Do not analyze contextQuestionJa or any previous conversation text. Evaluate the answer as Japanese job interview speech, so prefer polite desu/masu style, concrete examples, and professional word choice. In errorFeedback, list concrete problems in targetTranscriptJa only, including vocabulary, grammar, particles, tense, word choice, missing politeness, and unnatural expressions. For each item, cite an original Japanese fragment that appears in targetTranscriptJa, explain the issue in Chinese, give an actionable Chinese suggestion, and provide one corrected Japanese version. If there is no clear error, include only one improvement item about richness or interview appropriateness. Pronunciation feedback is based on transcript-level evidence, so phrase it as likely or practice-focused unless the issue is certain.",
       object(
         "task", "Evaluate only targetTranscriptJa. Return only text feedback and scores for targetTranscriptJa.",
-        "topic", topic,
+        "topic", INTERVIEW_TOPIC,
+        "requestedTopicFromClient", topic,
         "difficulty", difficulty,
         "contextQuestionJa", contextQuestionJa,
         "targetTranscriptJa", transcriptJa,
@@ -204,7 +214,7 @@ final class CoachService {
       "additionalProperties", false,
       "required", list("nextReplyJa", "topicState", "nextTopicSuggestionZh"),
       "properties", object(
-        "nextReplyJa", object("type", "string", "minLength", 60),
+        "nextReplyJa", object("type", "string", "minLength", 40),
         "topicState", object("type", "string", "enum", list("continue", "shift", "wrap_up")),
         "nextTopicSuggestionZh", object("type", "string")
       )
@@ -348,6 +358,10 @@ final class CoachService {
 
   private String stringValue(Object value) {
     return value instanceof String text ? text : "";
+  }
+
+  private StarterTopic randomInterviewQuestion() {
+    return starters.get(random.nextInt(starters.size()));
   }
 
   private List<StarterTopic> loadStarters() {
