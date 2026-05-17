@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { hasOpenAIKey, synthesizeJapanese } from "@/lib/openai";
+import { javaPostJson } from "@/lib/java-backend";
 
 export const runtime = "nodejs";
 
@@ -11,12 +11,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Missing text." }, { status: 400 });
   }
 
-  if (!hasOpenAIKey()) {
-    return NextResponse.json({ audioBase64: undefined, demoMode: true });
-  }
-
-  return NextResponse.json({
-    audioBase64: await synthesizeJapanese(text),
-    demoMode: false
-  });
+  return NextResponse.json(await javaPostJson("/api/tts", { text }));
 }

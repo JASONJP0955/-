@@ -128,3 +128,25 @@ GOOGLE_SPEECH_MODEL=latest_short
 ## 发音反馈说明
 
 当前 MVP 的发音反馈是基于转写文本和日语学习规则生成的练习提示，不是音素级声学评分。要升级到更专业的发音评测，可以继续加入词级时间戳、音素对齐、pitch accent 分析和置信度统计。
+
+## Java backend
+
+AI processing has been moved into `backend-java`.
+
+Local development needs two terminals:
+
+```powershell
+npm run java:dev
+```
+
+```powershell
+npm run dev
+```
+
+Next.js still serves the UI and Supabase history pages. Its `/api/*` routes proxy AI work to the Java service through:
+
+```bash
+JAVA_BACKEND_URL=http://127.0.0.1:8080
+```
+
+For production, deploy `backend-java` to a Java-capable host, then set `JAVA_BACKEND_URL` in Vercel to the public Java backend URL.

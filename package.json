@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "java:build": "powershell -ExecutionPolicy Bypass -File backend-java/build.ps1",
+    "java:dev": "powershell -ExecutionPolicy Bypass -File backend-java/run.ps1",
     "build": "next build",
     "check:secrets": "node scripts/check-no-secrets.mjs",
     "start": "next start",
