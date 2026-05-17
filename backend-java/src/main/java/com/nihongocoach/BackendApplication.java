@@ -12,7 +12,7 @@ import java.util.concurrent.Executors;
 
 public final class BackendApplication {
   public static void main(String[] args) throws IOException {
-    int port = Integer.parseInt(OpenAiClient.env("JAVA_BACKEND_PORT", "8080"));
+    int port = Integer.parseInt(OpenAiClient.env("JAVA_BACKEND_PORT", OpenAiClient.env("PORT", "8080")));
     String host = OpenAiClient.env("JAVA_BACKEND_HOST", "127.0.0.1");
     OpenAiClient openAi = new OpenAiClient();
     SpeechClient speech = new SpeechClient(openAi);

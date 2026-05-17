@@ -150,3 +150,5 @@ JAVA_BACKEND_URL=http://127.0.0.1:8080
 ```
 
 For production, deploy `backend-java` to a Java-capable host, then set `JAVA_BACKEND_URL` in Vercel to the public Java backend URL.
+
+The Java backend includes a Dockerfile, so you can deploy it as a Docker web service. Set the service root to `backend-java`, then add the same AI environment variables there. After deployment, copy the public backend URL into Vercel as `JAVA_BACKEND_URL`.
