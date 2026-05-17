@@ -5,6 +5,10 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/browser";
 
+const supabaseConfigured = Boolean(
+  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
+
 export default function LoginPage() {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
@@ -24,6 +28,12 @@ export default function LoginPage() {
     event.preventDefault();
     setError(null);
     setMessage(null);
+
+    if (!supabaseConfigured) {
+      setError("用户系统还没有连接。请在 Vercel 设置 NEXT_PUBLIC_SUPABASE_URL 和 NEXT_PUBLIC_SUPABASE_ANON_KEY 后重新部署。");
+      return;
+    }
+
     setIsBusy(true);
 
     try {
@@ -76,6 +86,10 @@ export default function LoginPage() {
           </button>
         </div>
 
+        {!supabaseConfigured ? (
+          <p className="account-warning">当前部署没有读取到 Supabase 配置，所以暂时不能登录、注册或保存历史记录。</p>
+        ) : null}
+
         <form className="auth-form" onSubmit={submit}>
           {mode === "register" ? (
             <label>
@@ -106,7 +120,7 @@ export default function LoginPage() {
             />
           </label>
 
-          <button className="primary-action" type="submit" disabled={isBusy}>
+          <button className="primary-action" type="submit" disabled={isBusy || !supabaseConfigured}>
             {isBusy ? <Loader2 className="spin" size={18} /> : null}
             {mode === "login" ? "登录" : "创建账号"}
           </button>

@@ -219,6 +219,16 @@ input {
   overflow-wrap: anywhere;
 }
 
+.account-warning {
+  background: #fff7e8;
+  border: 1px solid #f0c36d;
+  border-radius: 8px;
+  color: #75500b;
+  font-size: 12px;
+  line-height: 1.45;
+  padding: 8px 10px;
+}
+
 .status-strip {
   align-items: center;
   border-top: 1px solid var(--line);

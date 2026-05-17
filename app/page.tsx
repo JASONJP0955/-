@@ -391,25 +391,26 @@ export default function Home() {
             重播机器人
           </button>
 
-          {apiStatus?.supabaseConfigured ? (
-            <div className="account-actions">
-              <a className="ghost-action" href="/history">
-                历史记录
+          <div className="account-actions">
+            <a className="ghost-action" href="/history">
+              历史记录
+            </a>
+            {apiStatus?.authenticated ? (
+              <form action="/auth/signout" method="post">
+                <button className="ghost-action" type="submit">
+                  退出登录
+                </button>
+              </form>
+            ) : (
+              <a className="ghost-action" href="/login">
+                登录 / 注册
               </a>
-              {apiStatus.authenticated ? (
-                <form action="/auth/signout" method="post">
-                  <button className="ghost-action" type="submit">
-                    退出登录
-                  </button>
-                </form>
-              ) : (
-                <a className="ghost-action" href="/login">
-                  登录 / 注册
-                </a>
-              )}
-              {apiStatus.userEmail ? <p className="account-email">{apiStatus.userEmail}</p> : null}
-            </div>
-          ) : null}
+            )}
+            {apiStatus && !apiStatus.supabaseConfigured ? (
+              <p className="account-warning">用户系统未连接：请在 Vercel 配置 Supabase URL 和 anon key 后重新部署。</p>
+            ) : null}
+            {apiStatus?.userEmail ? <p className="account-email">{apiStatus.userEmail}</p> : null}
+          </div>
 
           <div className="status-strip">
             <CheckCircle2 size={17} />
