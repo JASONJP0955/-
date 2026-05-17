@@ -13,7 +13,8 @@ export async function POST(request: Request) {
     sessionId: payload.sessionId,
     topic: payload.topic,
     difficulty: payload.difficulty,
-    assistantText: payload.assistantText
+    assistantText: payload.assistantText,
+    assistantAudioBase64: payload.audioBase64
   });
 
   return NextResponse.json(payload);

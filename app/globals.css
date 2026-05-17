@@ -405,6 +405,10 @@ input {
   padding: 0 10px;
 }
 
+.assistant-audio-chip {
+  justify-self: start;
+}
+
 .empty-state {
   align-items: center;
   color: var(--muted);

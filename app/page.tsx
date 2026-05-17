@@ -34,6 +34,10 @@ function nowId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+function createAssistantAudioUrl(audioBase64?: string) {
+  return audioBase64 ? `data:audio/mp3;base64,${audioBase64}` : undefined;
+}
+
 function speakBrowserJa(text: string) {
   if (!("speechSynthesis" in window)) return;
   window.speechSynthesis.cancel();
@@ -41,16 +45,6 @@ function speakBrowserJa(text: string) {
   utterance.lang = "ja-JP";
   utterance.rate = 0.92;
   window.speechSynthesis.speak(utterance);
-}
-
-function playBase64Audio(audioBase64?: string, fallbackText?: string) {
-  if (audioBase64) {
-    const audio = new Audio(`data:audio/mp3;base64,${audioBase64}`);
-    void audio.play();
-    return;
-  }
-
-  if (fallbackText) speakBrowserJa(fallbackText);
 }
 
 export default function Home() {
@@ -129,6 +123,7 @@ export default function Home() {
   }
 
   function stopUserAudio() {
+    window.speechSynthesis?.cancel();
     currentUserAudioRef.current?.pause();
     if (currentUserAudioRef.current) {
       currentUserAudioRef.current.currentTime = 0;
@@ -140,7 +135,7 @@ export default function Home() {
     currentUserAudioGainRef.current = null;
   }
 
-  async function playUserAudio(audioUrl?: string) {
+  async function playUserAudio(audioUrl?: string, gainValue = 2.5) {
     if (!audioUrl) return;
 
     stopUserAudio();
@@ -152,7 +147,7 @@ export default function Home() {
       playbackContextRef.current = context;
       const source = context.createMediaElementSource(audio);
       const gain = context.createGain();
-      gain.gain.value = 2.5;
+      gain.gain.value = gainValue;
       source.connect(gain);
       gain.connect(context.destination);
       currentUserAudioSourceRef.current = source;
@@ -169,6 +164,18 @@ export default function Home() {
     }
   }
 
+  function playAssistantAudio(audioUrl?: string, fallbackText?: string) {
+    if (audioUrl) {
+      void playUserAudio(audioUrl, 1);
+      return;
+    }
+
+    if (fallbackText) {
+      stopUserAudio();
+      speakBrowserJa(fallbackText);
+    }
+  }
+
   async function startSession() {
     setIsBusy(true);
     setError(null);
@@ -182,10 +189,12 @@ export default function Home() {
 
       if (!response.ok) throw new Error(await response.text());
       const data = (await response.json()) as SessionStart;
+      const assistantAudioUrl = createAssistantAudioUrl(data.audioBase64);
       const message: ChatMessage = {
         id: nowId(),
         role: "assistant",
         text: data.assistantText,
+        audioUrl: assistantAudioUrl,
         createdAt: new Date().toISOString()
       };
 
@@ -198,7 +207,7 @@ export default function Home() {
       setSelectedFeedbackId(null);
       setRecordedBlob(null);
       setDemoMode(data.demoMode);
-      playBase64Audio(data.audioBase64, data.assistantText);
+      playAssistantAudio(assistantAudioUrl, data.assistantText);
     } catch (err) {
       setError(err instanceof Error ? err.message : "面试启动失败");
     } finally {
@@ -289,10 +298,12 @@ export default function Home() {
         audioUrl,
         createdAt: new Date().toISOString()
       };
+      const assistantAudioUrl = createAssistantAudioUrl(data.audioBase64);
       const assistantMessage: ChatMessage = {
         id: nowId(),
         role: "assistant",
         text: data.nextReplyJa,
+        audioUrl: assistantAudioUrl,
         createdAt: new Date().toISOString()
       };
 
@@ -301,7 +312,7 @@ export default function Home() {
       setSelectedFeedbackId(userMessageId);
       setDemoMode(data.demoMode);
       setRecordedBlob(null);
-      playBase64Audio(data.audioBase64, data.nextReplyJa);
+      playAssistantAudio(assistantAudioUrl, data.nextReplyJa);
       void loadDetailedFeedback(userMessageId, audioBlob, data, historySnapshot);
     } catch (err) {
       setError(err instanceof Error ? err.message : "分析失败");
@@ -326,6 +337,7 @@ export default function Home() {
       form.set("nextReplyJa", fastReply.nextReplyJa);
       form.set("topicState", fastReply.topicState);
       form.set("nextTopicSuggestionZh", fastReply.nextTopicSuggestionZh);
+      if (fastReply.audioBase64) form.set("assistantAudioBase64", fastReply.audioBase64);
       form.set("contextQuestionJa", [...historySnapshot].reverse().find((message) => message.role === "assistant")?.text ?? "");
 
       const response = await fetch("/api/feedback", {
@@ -356,7 +368,7 @@ export default function Home() {
   }
 
   function replayLatest() {
-    if (latestAssistant) speakBrowserJa(latestAssistant.text);
+    if (latestAssistant) playAssistantAudio(latestAssistant.audioUrl, latestAssistant.text);
   }
 
   return (
@@ -494,7 +506,18 @@ export default function Home() {
                         ) : null}
                       </div>
                     ) : (
-                      <p>{message.text}</p>
+                      <div className="message-content">
+                        <p>{message.text}</p>
+                        <button
+                          type="button"
+                          className="audio-chip assistant-audio-chip"
+                          onClick={() => playAssistantAudio(message.audioUrl, message.text)}
+                          title="播放这句机器人语音"
+                        >
+                          <Play size={14} />
+                          播放语音
+                        </button>
+                      </div>
                     )}
                   </article>
                 );

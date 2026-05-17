@@ -2,6 +2,7 @@ import type { CoachReply, Difficulty } from "@/types/coach";
 import { createClient } from "@/lib/supabase/server";
 
 const RECORDINGS_BUCKET = "user-recordings";
+type SupabaseClient = NonNullable<Awaited<ReturnType<typeof createClient>>>;
 
 function normalizeAudioContentType(type: string) {
   if (type.includes("webm")) return "audio/webm";
@@ -11,11 +12,39 @@ function normalizeAudioContentType(type: string) {
   return "audio/webm";
 }
 
+function cleanBase64Audio(audioBase64?: string) {
+  if (!audioBase64) return "";
+  const value = audioBase64.includes(",") ? audioBase64.split(",").pop() : audioBase64;
+  return value?.trim() ?? "";
+}
+
+async function uploadAssistantAudio(params: {
+  supabase: SupabaseClient;
+  userId: string;
+  sessionId: string;
+  utteranceId: string;
+  audioBase64?: string;
+}) {
+  const cleaned = cleanBase64Audio(params.audioBase64);
+  if (!cleaned) return undefined;
+
+  const audioPath = `${params.userId}/${params.sessionId}/${params.utteranceId}.mp3`;
+  const { error } = await params.supabase.storage.from(RECORDINGS_BUCKET).upload(audioPath, Buffer.from(cleaned, "base64"), {
+    cacheControl: "3600",
+    contentType: "audio/mpeg",
+    upsert: false
+  });
+
+  if (error) throw error;
+  return audioPath;
+}
+
 export async function createConversationSession(params: {
   sessionId: string;
   topic: string;
   difficulty: Difficulty;
   assistantText: string;
+  assistantAudioBase64?: string;
 }) {
   try {
     const supabase = await createClient();
@@ -37,11 +66,22 @@ export async function createConversationSession(params: {
 
     if (sessionError) throw sessionError;
 
+    const assistantUtteranceId = crypto.randomUUID();
+    const assistantAudioPath = await uploadAssistantAudio({
+      supabase,
+      userId: user.id,
+      sessionId: params.sessionId,
+      utteranceId: assistantUtteranceId,
+      audioBase64: params.assistantAudioBase64
+    });
+
     await supabase.from("utterances").insert({
+      id: assistantUtteranceId,
       session_id: params.sessionId,
       user_id: user.id,
       speaker: "assistant",
-      text: params.assistantText
+      text: params.assistantText,
+      audio_path: assistantAudioPath
     });
 
     return { persisted: true };
@@ -57,6 +97,7 @@ export async function saveConversationTurn(params: {
   difficulty: Difficulty;
   audio: File;
   coach: CoachReply;
+  assistantAudioBase64?: string;
 }) {
   try {
     const supabase = await createClient();
@@ -120,12 +161,21 @@ export async function saveConversationTurn(params: {
 
     if (feedbackError) throw feedbackError;
 
+    const assistantAudioPath = await uploadAssistantAudio({
+      supabase,
+      userId: user.id,
+      sessionId: params.sessionId,
+      utteranceId: assistantUtteranceId,
+      audioBase64: params.assistantAudioBase64
+    });
+
     await supabase.from("utterances").insert({
       id: assistantUtteranceId,
       session_id: params.sessionId,
       user_id: user.id,
       speaker: "assistant",
-      text: params.coach.nextReplyJa
+      text: params.coach.nextReplyJa,
+      audio_path: assistantAudioPath
     });
 
     return { persisted: true, audioPath };

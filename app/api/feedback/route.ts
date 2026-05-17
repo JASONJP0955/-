@@ -17,6 +17,7 @@ export async function POST(request: Request) {
     const sessionId = String(form.get("sessionId") || crypto.randomUUID());
     const difficultyValue = form.get("difficulty");
     const difficulty = isDifficulty(difficultyValue) ? difficultyValue : "intermediate";
+    const assistantAudioBase64 = String(form.get("assistantAudioBase64") ?? "");
 
     if (!(audio instanceof File)) {
       return NextResponse.json({ error: "没有收到录音文件。" }, { status: 400 });
@@ -30,7 +31,8 @@ export async function POST(request: Request) {
           topic,
           difficulty,
           audio,
-          coach
+          coach,
+          assistantAudioBase64
         });
 
     return NextResponse.json({
